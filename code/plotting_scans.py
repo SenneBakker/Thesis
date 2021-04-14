@@ -12,6 +12,9 @@ from matplotlib.colors import LinearSegmentedColormap
 
 
 
+def name_print():
+  print("commit worked")
+
 ### Plot Scan Summary ###
 def plot_scans(filename, dacMin, dacMax):
 
