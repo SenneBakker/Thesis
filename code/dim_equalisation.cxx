@@ -76,6 +76,15 @@ int load_mean(string filename, uint16_t* matrix)
   return 0;
 }
 
+void TestCommit(string prefix)
+{
+    string name_test = prefix + "_TrimBest_Noise_test.csv";
+    FILE *file_test = fopen(name_test.c_str(), "w");
+    fprintf(file_test,"%s\n" ,"Test for commiting file. ");
+    fclose(file_test);
+}
+
+
 // ======================================
 //
 // Main
@@ -90,6 +99,8 @@ int main(int argc, char* argv[])
   }
   string prefix = argv[1];
   int dacRange = 25; // Tuneable parameter
+    
+    TestCommit(prefix);
 
   // === Load Trim 0 and Trim F Means ===
   uint16_t mean_trim0[256*256];
