@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>  // string splitting
 #include <vector>   // string splitting
+#include <list>
 
 using namespace std;
 
@@ -135,6 +136,9 @@ int main(int argc, char* argv[])
   FILE *file_trim = fopen(name_trim.c_str(), "w");
   string name_pred = prefix + "_TrimBest_Noise_Predict.csv";
   FILE *file_pred = fopen(name_pred.c_str(), "w");
+  // === Added april 15th ===
+  string name_lpred = prefix + "_TrimBest_Noise_ListPredict.csv";
+  FILE *file_lpred = fopen(name_lpred.c_str(), "w");
   
   float trim_scale;
   int trim;
@@ -170,14 +174,18 @@ int main(int argc, char* argv[])
       fprintf(file_mask, "%d\n", mask);
       fprintf(file_trim, "%d\n", trim);
       fprintf(file_pred, "%04d\n", predict[i]);
+      fprintf(file_lpred, "%d\n", predict[i]);
     } else {
       fprintf(file_mask, "%d,", mask);
       fprintf(file_trim, "%d,", trim);
       fprintf(file_pred, "%04d, ", predict[i]);
+      fprintf(file_lpred, "%d\n", predict[i]);
     }
   }
   fclose(file_mask);
   fclose(file_trim);
+  fclose(file_lpred);
+  fclose(file_pred);
   achieved_mean /= (256*256-nmasked);
   
   for (int i=0; i<256*256; ++i) {
