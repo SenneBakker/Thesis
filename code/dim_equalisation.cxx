@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     if (mean_trim0[i]>0 && mean_trimF[i]>0) {
       glob_mean_trim0 += mean_trim0[i];
       glob_mean_trimF += mean_trimF[i];
-      glob_mean_trim3 += glob_mean_trim3[i];
+      glob_mean_trim3 += mean_trim3[i];
       nhits++;
     }
   }
@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
     if (mean_trim0[i]>0 && mean_trimF[i]>0 && mean_trim3[i]>0) {
       glob_width_trim0 += pow(glob_mean_trim0 - mean_trim0[i], 2);
       glob_width_trimF += pow(glob_mean_trimF - mean_trimF[i], 2);
-        glob_width_trim3 += pow(glob_mean_trim3 - mean_trim3[i], 2);
+      glob_width_trim3 += pow(glob_mean_trim3 - mean_trim3[i], 2);
 
     }
   }
