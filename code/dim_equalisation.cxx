@@ -11,6 +11,7 @@
 #include <sstream>  // string splitting
 #include <vector>   // string splitting
 #include <list>
+#include <glob.h>
 
 using namespace std;
 
@@ -92,7 +93,7 @@ int main(int argc, char* argv[])
   }
   string prefix = argv[1];
   int dacRange = 25; // Tuneable parameter
-  cout << prefix;
+
     
 
   // === Load Trim 0 and Trim F Means ===
@@ -100,7 +101,11 @@ int main(int argc, char* argv[])
   load_mean(prefix+"_Trim0_Noise_Mean.csv", mean_trim0);
   uint16_t mean_trimF[256*256];
   load_mean(prefix+"_TrimF_Noise_Mean.csv", mean_trimF);
-  
+    
+  glob_t glob_result;
+  memset(&glob_result, 0, sizeof(glob_result));
+  int return_value = glob(prefix.c_str(), GLOB_TILDE, NULL, &glob_result);
+  cout << return_value;
 
   // === Calculate Target ===
   cout << "[dim_equalisation] Equalising" << endl;
