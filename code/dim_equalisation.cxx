@@ -23,6 +23,8 @@ using namespace std;
 
 int mean_trim0[256*256];
 
+
+int Getfiles(int argc, char **argv);
 // ======================================
 //
 // Helper Functions
@@ -101,12 +103,25 @@ int main(int argc, char* argv[])
   load_mean(prefix+"_Trim0_Noise_Mean.csv", mean_trim0);
   uint16_t mean_trimF[256*256];
   load_mean(prefix+"_TrimF_Noise_Mean.csv", mean_trimF);
+  uint16_t mean_trimX[256*256];
+  load_mean(prefix + "_trim3_Noise_Mean.csv", mean_trimX);
+  cout << mean_trimX;
     
-  glob_t glob_result;
-  memset(&glob_result, 0, sizeof(glob_result));
-  int return_value = glob(prefix.c_str(), GLOB_TILDE, NULL, &glob_result);
-  cout << return_value;
-
+    
+  // === Added april 19th to simulate glob.glob() behavior from python ===
+//  glob_t glob_result;
+//  memset(&glob_result, 0, sizeof(glob_result));
+//  int return_value = glob(prefix.c_str(), GLOB_TILDE, NULL, &glob_result);
+//  cout << return_value;
+//  cout << "\n\n";
+//  vector<string> filenames;
+//  for(int i = 0; i < glob_result.gl_pathc; ++i) {
+//     filenames.push_back(string(glob_result.gl_pathv[i]));
+//     cout <<string(glob_result.gl_pathv[i]) + "\n\n";
+//  }
+    
+    
+    
   // === Calculate Target ===
   cout << "[dim_equalisation] Equalising" << endl;
   int glob_mean_trim0 = 0;
