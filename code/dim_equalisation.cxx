@@ -125,11 +125,13 @@ int main(int argc, char* argv[])
   cout << "[dim_equalisation] Equalising" << endl;
   int glob_mean_trim0 = 0;
   int glob_mean_trimF = 0;
+  int glob_mean_trim3 = 0;
   int nhits = 0;
   for (int i=0; i<256*256; ++i) {
     if (mean_trim0[i]>0 && mean_trimF[i]>0) {
       glob_mean_trim0 += mean_trim0[i];
       glob_mean_trimF += mean_trimF[i];
+      glob_mean_trim3 += glob_mean_trim3[i];
       nhits++;
     }
   }
@@ -139,18 +141,24 @@ int main(int argc, char* argv[])
   }
   glob_mean_trim0 /= nhits;
   glob_mean_trimF /= nhits;
-  int target = (glob_mean_trim0 + glob_mean_trimF)/2;
+  glob_mean_trim3 /= nhits;
+  int target = (glob_mean_trim0 + glob_mean_trimF + glob_mean_trim3)/3;
   
   float glob_width_trim0 = 0;
   float glob_width_trimF = 0;
+  float glob_width_trim3 = 0;
   for (int i=0; i<256*256; ++i) {
-    if (mean_trim0[i]>0 && mean_trimF[i]>0) {
+    if (mean_trim0[i]>0 && mean_trimF[i]>0 && mean_trim3[i]>0) {
       glob_width_trim0 += pow(glob_mean_trim0 - mean_trim0[i], 2);
       glob_width_trimF += pow(glob_mean_trimF - mean_trimF[i], 2);
+        glob_width_trim3 += pow(glob_mean_trim3 - mean_trim3[i], 2);
+
     }
   }
   glob_width_trim0 = sqrt(glob_width_trim0/(nhits-1));
   glob_width_trimF = sqrt(glob_width_trimF/(nhits-1));
+  glob_width_trim3 = sqrt(glob_width_trim3/(nhits-1));
+
   
   // === Calculate optimal trim ===
   string name_mask = prefix + "_Matrix_Mask.csv";
