@@ -24,7 +24,6 @@ using namespace std;
 int mean_trim0[256*256];
 
 
-int Getfiles(int argc, char **argv);
 // ======================================
 //
 // Helper Functions
