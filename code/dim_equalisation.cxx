@@ -105,7 +105,6 @@ int main(int argc, char* argv[])
   load_mean(prefix+"_TrimF_Noise_Mean.csv", mean_trimF);
   uint16_t mean_trimX[256*256];
   load_mean(prefix + "_trim3_Noise_Mean.csv", mean_trimX);
-  cout << mean_trimX;
     
     
   // === Added april 19th to simulate glob.glob() behavior from python ===
