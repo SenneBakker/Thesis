@@ -92,6 +92,7 @@ int main(int argc, char* argv[])
   }
   string prefix = argv[1];
   int dacRange = 25; // Tuneable parameter
+  cout << prefix;
     
 
   // === Load Trim 0 and Trim F Means ===

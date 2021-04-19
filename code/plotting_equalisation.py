@@ -166,6 +166,7 @@ def plot_mask(filename):
   plt.axes().set_aspect('equal')
 
   ### Save ###
+#  plt.show()
   plt.savefig(filename+"_Plot_Matrix_Mask.png", bbox_inches='tight', format='png')
 
 
