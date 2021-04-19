@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
   load_mean(prefix+"_Trim0_Noise_Mean.csv", mean_trim0);
   uint16_t mean_trimF[256*256];
   load_mean(prefix+"_TrimF_Noise_Mean.csv", mean_trimF);
-  uint16_t mean_trimX[256*256];
+  uint16_t mean_trim3[256*256];
   load_mean(prefix + "_Trim3_Noise_Mean.csv", mean_trim3);
     
     
