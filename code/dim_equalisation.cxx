@@ -226,6 +226,7 @@ int main(int argc, char* argv[])
   cout << "[dim_equalisation] Summary" << endl;
   cout << "  Trim 0 distribution: " << glob_mean_trim0 << " +/- " << round(glob_width_trim0) << endl;
   cout << "  Trim F distribution: " << glob_mean_trimF << " +/- " << round(glob_width_trimF) << endl;
+  cout << "  Trim 3 distribution: " << glob_mean_trim3 << " +/- " << round(glob_width_trim3) << endl;
   cout << "  Equalisation Target: " << target << endl;
   char buffer[25];
   sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
