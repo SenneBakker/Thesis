@@ -171,10 +171,14 @@ int main(int argc, char* argv[])
   FILE *file_lpred = fopen(name_lpred.c_str(), "w");
   
   float trim_scale;
+  float trim_scale_F_3;
   int trim;
+  int trim_F_3;
   int mask;
   int predict[256*256];
+  int predict_F_3[256*256];
   int diff;
+  int diff_F_3;
   long nmasked = 0;
   int achieved_mean = 0;
   float achieved_width = 0;
@@ -182,9 +186,17 @@ int main(int argc, char* argv[])
   for (int i=0; i<256*256; ++i) {
     trim_scale = 1.*(mean_trimF[i] - mean_trim0[i])/16;
     trim = round((target - mean_trim0[i])/trim_scale);
+    // === Added april 21th ===
+    trim_scale_F_3 = 1.*(mean_trimF[i] - mean_trim3[i])/16;
+    trim_F_3 = round((target - mean_trim3[i])/trim_scale_F_3);
     mask = 0;
     predict[i] = mean_trim0[i] + round(trim*trim_scale);
+    predict_F_3[i] = mean_trim3[i] + round(trim_F_3*trim_scale_F_3);
+
     diff = fabs(predict[i] - target);
+    diff_F_3 = fabs(predict_F_3[i] - target);
+      
+    
     if (mean_trim0[i]==0 || mean_trimF[i]==0 || trim>15 || trim<0 || diff>dacRange) {
       if (mean_trim0[i]==0 && mean_trimF[i]==0) mask = 1;
       else if (mean_trim0[i]==0) mask = 2;
@@ -204,12 +216,12 @@ int main(int argc, char* argv[])
       fprintf(file_mask, "%d\n", mask);
       fprintf(file_trim, "%d\n", trim);
       fprintf(file_pred, "%04d\n", predict[i]);
-      fprintf(file_lpred, "%d\n", predict[i]);
+      fprintf(file_lpred, "%04d\n", predict_F_3[i]);
     } else {
       fprintf(file_mask, "%d,", mask);
       fprintf(file_trim, "%d,", trim);
       fprintf(file_pred, "%04d, ", predict[i]);
-      fprintf(file_lpred, "%d\n", predict[i]);
+      fprintf(file_lpred, "%04d, ", predict_F_3[i]);
     }
   }
   fclose(file_mask);
