@@ -189,8 +189,10 @@ int main(int argc, char* argv[])
     // === Added april 21th ===
     trim_scale_F_3 = 1.*(mean_trim0[i] - mean_trim3[i])/16;
     trim_F_3 = round((target - mean_trim3[i])/trim_scale_F_3);
+    
     mask = 0;
     predict[i] = mean_trim0[i] + round(trim*trim_scale);
+    
     predict_F_3[i] = mean_trim3[i] + round(trim_F_3*trim_scale_F_3);
 
     diff = fabs(predict[i] - target);
@@ -210,6 +212,7 @@ int main(int argc, char* argv[])
       nmasked++;
     } else {
       achieved_mean += predict[i];
+      achieved_mean_F_3 += predict_F_3[i];
     }
     // Save results
     if (i%256==255) {
