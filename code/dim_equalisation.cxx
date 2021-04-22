@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
   string name_pred = prefix + "_TrimBest_Noise_Predict.csv";
   FILE *file_pred = fopen(name_pred.c_str(), "w");
   // === Added april 15th ===
-  string name_lpred = prefix + "_TrimBest_Noise_ListPredict.csv";
+  string name_lpred = prefix + "_TrimBest_Noise_Predict_F_3.csv";
   FILE *file_lpred = fopen(name_lpred.c_str(), "w");
   
   float trim_scale;
