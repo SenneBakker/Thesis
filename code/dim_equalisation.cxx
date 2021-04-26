@@ -102,35 +102,25 @@ int main(int argc, char* argv[])
   load_mean(prefix+"_Trim0_Noise_Mean.csv", mean_trim0);
   uint16_t mean_trimF[256*256];
   load_mean(prefix+"_TrimF_Noise_Mean.csv", mean_trimF);
-  uint16_t mean_trim3[256*256];
-  load_mean(prefix + "_Trim3_Noise_Mean.csv", mean_trim3);
-    
-    
-  // === Added april 19th to simulate glob.glob() behavior from python ===
-//  glob_t glob_result;
-//  memset(&glob_result, 0, sizeof(glob_result));
-//  int return_value = glob(prefix.c_str(), GLOB_TILDE, NULL, &glob_result);
-//  cout << return_value;
-//  cout << "\n\n";
-//  vector<string> filenames;
-//  for(int i = 0; i < glob_result.gl_pathc; ++i) {
-//     filenames.push_back(string(glob_result.gl_pathv[i]));
-//     cout <<string(glob_result.gl_pathv[i]) + "\n\n";
-//  }
-    
-    
+  uint16_t mean_trim5[256*256];
+  load_mean(prefix + "_Trim5_Noise_Mean.csv", mean_trim5);
+  uint16_t mean_trimA[256*256];
+  load_mean(prefix + "_TrimA_Noise_Mean.csv", mean_trimA);
+
     
   // === Calculate Target ===
   cout << "[dim_equalisation] Equalising" << endl;
   int glob_mean_trim0 = 0;
   int glob_mean_trimF = 0;
-  int glob_mean_trim3 = 0;
+  int glob_mean_trim5 = 0;
+  int glob_mean_trimA = 0;
   int nhits = 0;
   for (int i=0; i<256*256; ++i) {
-    if (mean_trim0[i]>0 && mean_trimF[i]>0) {
+    if (mean_trim0[i]>0 && mean_trimF[i]>0 && mean_trim5[i]>0 && mean_trimA[i]>0) {
       glob_mean_trim0 += mean_trim0[i];
       glob_mean_trimF += mean_trimF[i];
-      glob_mean_trim3 += mean_trim3[i];
+      glob_mean_trim5 += mean_trim5[i];
+      glob_mean_trimA += mean_trimA[i];
       nhits++;
     }
   }
@@ -140,23 +130,26 @@ int main(int argc, char* argv[])
   }
   glob_mean_trim0 /= nhits;
   glob_mean_trimF /= nhits;
-  glob_mean_trim3 /= nhits;
-  int target = (glob_mean_trim0 + glob_mean_trimF + glob_mean_trim3)/3;
+  glob_mean_trim5 /= nhits;
+  glob_mean_trimA /= nhits;
+  int target = (glob_mean_trim0 + glob_mean_trimF + glob_mean_trim5 + glob_mean_trimA)/4;
   
   float glob_width_trim0 = 0;
   float glob_width_trimF = 0;
-  float glob_width_trim3 = 0;
+  float glob_width_trim5 = 0;
+  float glob_width_trimA = 0;
   for (int i=0; i<256*256; ++i) {
-    if (mean_trim0[i]>0 && mean_trimF[i]>0 && mean_trim3[i]>0) {
+    if (mean_trim0[i]>0 && mean_trimF[i]>0 && mean_trim5[i]>0 & mean_trimA[i]>0) {
       glob_width_trim0 += pow(glob_mean_trim0 - mean_trim0[i], 2);
       glob_width_trimF += pow(glob_mean_trimF - mean_trimF[i], 2);
-      glob_width_trim3 += pow(glob_mean_trim3 - mean_trim3[i], 2);
-
+      glob_width_trim5 += pow(glob_mean_trim5 - mean_trim5[i], 2);
+      glob_width_trimA += pow(glob_mean_trimA - mean_trimA[i], 2);
     }
   }
   glob_width_trim0 = sqrt(glob_width_trim0/(nhits-1));
   glob_width_trimF = sqrt(glob_width_trimF/(nhits-1));
-  glob_width_trim3 = sqrt(glob_width_trim3/(nhits-1));
+  glob_width_trim5 = sqrt(glob_width_trim5/(nhits-1));
+  glob_width_trimA = sqrt((glob_width_trimA)/(nhits-1));
 
   
   // === Calculate optimal trim ===
@@ -167,81 +160,119 @@ int main(int argc, char* argv[])
   string name_pred = prefix + "_TrimBest_Noise_Predict.csv";
   FILE *file_pred = fopen(name_pred.c_str(), "w");
   // === Added april 15th ===
-  string name_lpred = prefix + "_TrimBest_Noise_Predict_F_3.csv";
+  string name_lpred = prefix + "_TrimBest_Noise_Predict_F_5.csv";
   FILE *file_lpred = fopen(name_lpred.c_str(), "w");
+  // === Added april 22nd ===
+  string name_0pred = prefix + "_TrimBest_Noise_Predict_0_5.csv";
+  FILE *file_0pred = fopen(name_0pred.c_str(), "w");
+    
   
   float trim_scale;
-  float trim_scale_F_3;
+  float trim_scale_F_5;
+  float trim_scale_0_5;
   int trim;
-  int trim_F_3;
+  int trim_F_5;
+  int trim_0_5;
   int mask;
   int predict[256*256];
-  int predict_F_3[256*256];
+  int predict_F_5[256*256];
+  int predict_0_5[256*256];
   int diff;
-  int diff_F_3;
+  int diff_F_5;
+  int diff_0_5;
   long nmasked = 0;
   int achieved_mean = 0;
+  int achieved_mean_F_5 = 0;
+  int achieved_mean_0_5 = 0;
   float achieved_width = 0;
+  float achieved_width_F_5 = 0;
+  float achieved_width_0_5 = 0;
   
   for (int i=0; i<256*256; ++i) {
     trim_scale = 1.*(mean_trimF[i] - mean_trim0[i])/16;
     trim = round((target - mean_trim0[i])/trim_scale);
     // === Added april 21th ===
-    trim_scale_F_3 = 1.*(mean_trim0[i] - mean_trim3[i])/16;
-    trim_F_3 = round((target - mean_trim3[i])/trim_scale_F_3);
-    
+    trim_scale_F_5 = 1.*(mean_trimF[i] - mean_trim5[i])/16;
+    trim_F_5 = round((target - mean_trim5[i])/trim_scale_F_5);
+    // === Added april 22nd ===
+    trim_scale_0_5 = 1.*(mean_trim0[i] - mean_trim5[i])/16;
+    trim_0_5 = round((target - mean_trim0[i])/trim_scale_0_5);
+
+      
     mask = 0;
     predict[i] = mean_trim0[i] + round(trim*trim_scale);
     
-    predict_F_3[i] = mean_trim3[i] + round(trim_F_3*trim_scale_F_3);
+    predict_F_5[i] = mean_trim5[i] + round(trim_F_5*trim_scale_F_5);
+    predict_0_5[i] = mean_trim0[i] + round(trim_0_5*trim_scale_0_5);
 
     diff = fabs(predict[i] - target);
-    diff_F_3 = fabs(predict_F_3[i] - target);
+    diff_F_5 = fabs(predict_F_5[i] - target);
+    diff_0_5 = fabs(predict_0_5[i] - target);
       
-    
-    if (mean_trim0[i]==0 || mean_trimF[i]==0 || trim>15 || trim<0 || diff>dacRange) {
-      if (mean_trim0[i]==0 && mean_trimF[i]==0) mask = 1;
+    // === Should be different since trim 5 is added. ===
+    if (mean_trim0[i]==0 || mean_trimF[i]==0 || trim>15 || trim<0 || diff>dacRange || mean_trim5[i]==0 || mean_trimA[i]==0 || diff_0_5>dacRange || diff_F_5>dacRange) {
+      if (mean_trim0[i]==0 && mean_trimF[i]==0 && mean_trim5[i]==0) mask = 1;
       else if (mean_trim0[i]==0) mask = 2;
       else if (mean_trimF[i]==0) mask = 3;
-      else if (trim>15 || trim<0) mask = 4;
+      else if (trim>15 || trim<0 || trim_0_5>15 || trim_0_5<0 || trim_F_5>15 || trim_F_5<0) mask = 4;
       else if (diff>dacRange) mask = 5;
-      else mask = 6; // Should not happen
+      else if (diff_0_5>dacRange) mask = 5;
+      else if (diff_F_5>dacRange) mask = 5;
+      else if (mean_trim5[i]==0) mask = 6;
+      else if (mean_trimA[i]==0) mask = 7;
+      else mask = 8; // Should not happen
 
       trim = 0;
       predict[i] = 0;
       nmasked++;
     } else {
       achieved_mean += predict[i];
-      achieved_mean_F_3 += predict_F_3[i];
+      achieved_mean_F_5 += predict_F_5[i];
+      achieved_width_0_5 += predict_0_5[i];
     }
     // Save results
     if (i%256==255) {
       fprintf(file_mask, "%d\n", mask);
       fprintf(file_trim, "%d\n", trim);
       fprintf(file_pred, "%04d\n", predict[i]);
-      fprintf(file_lpred, "%04d\n", predict_F_3[i]);
+      fprintf(file_lpred, "%04d\n", predict_F_5[i]);
+      fprintf(file_0pred, "%04d\n", predict_0_5[i]);
     } else {
       fprintf(file_mask, "%d,", mask);
       fprintf(file_trim, "%d,", trim);
       fprintf(file_pred, "%04d, ", predict[i]);
-      fprintf(file_lpred, "%04d, ", predict_F_3[i]);
+      fprintf(file_lpred, "%04d, ", predict_F_5[i]);
+      fprintf(file_0pred, "%04d, ", predict_0_5[i]);
     }
   }
   fclose(file_mask);
   fclose(file_trim);
   fclose(file_lpred);
   fclose(file_pred);
+  fclose(file_0pred);
   achieved_mean /= (256*256-nmasked);
+  achieved_mean_0_5 /= (256*256-nmasked);
+  achieved_mean_F_5 /= (256*256-nmasked);
   
   for (int i=0; i<256*256; ++i) {
     if (predict[i]>0) achieved_width += pow(predict[i] - achieved_mean, 2);
+      if (predict_0_5[i]>0) achieved_width_0_5 += pow(predict_0_5[i] - achieved_width_0_5,2);
+      if (predict_F_5[i]>0) achieved_mean_F_5 += pow(predict_F_5[i] - achieved_mean_F_5,2);
   }
   achieved_width = sqrt(achieved_width/(256*256-nmasked-1));
-  
+  achieved_width_0_5 = sqrt(achieved_width_0_5/(256*256-nmasked-1));
+  achieved_width_F_5 = sqrt(achieved_width_F_5/(256*256-nmasked-1));
+    
+    
   cout << "[dim_equalisation] Summary" << endl;
   cout << "  Trim 0 distribution: " << glob_mean_trim0 << " +/- " << round(glob_width_trim0) << endl;
+  cout << "  Trim 5 distribution: " << glob_mean_trim5 << " +/- " << round(glob_width_trim5) << endl;
+  cout << "  Trim A distribution: " << glob_mean_trimA << " +/- " << round(glob_width_trimA) << endl;
   cout << "  Trim F distribution: " << glob_mean_trimF << " +/- " << round(glob_width_trimF) << endl;
-  cout << "  Trim 3 distribution: " << glob_mean_trim3 << " +/- " << round(glob_width_trim3) << endl;
+    cout << "\n\n";
+    
+  cout << "  Mean of widths: " << (glob_width_trim0 + glob_width_trim5 + glob_width_trimA + glob_width_trimF)/4 << endl;
+
   cout << "  Equalisation Target: " << target << endl;
   char buffer[25];
   sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
