@@ -2,7 +2,9 @@
 import sys
 import os.path
 import math
+import glob
 import numpy as np
+import matplotlib as mpl
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
@@ -22,18 +24,28 @@ def asic_name(velopix):
     else:
       return "N/A"
 
+
 ### Plot Scan Summary ###
 def plot_scan(filename, dacMin, dacMax):
 
   addCont = os.path.isfile(filename+"_Control_Noise_Mean.csv")
 
+
+  files = sorted(glob.glob('/Users/Senne/Documents/Senne Bakker/RUG/Thesis/Github/Thesis/data/Module3_VP0-0_Trim*_Noise_Mean.csv'))
+  print("\n\n")
+
   ### Load Data ###
   try:
     velopix = filename.split('_')[-1]
-    mask = np.loadtxt(filename+"_Matrix_Mask.csv", dtype=int, delimiter=',')
-    data_Trim0 = np.loadtxt(filename+"_Trim0_Noise_Mean.csv", dtype=float, delimiter=',')
-    data_TrimF = np.loadtxt(filename+"_TrimF_Noise_Mean.csv", dtype=float, delimiter=',')
-    data_Equal = np.loadtxt(filename+"_TrimBest_Noise_Predict.csv", dtype=int, delimiter=',')
+    mask = np.loadtxt(filename + "_Matrix_Mask.csv", dtype=int, delimiter=',')
+    data_Trim0 = np.loadtxt(filename + "_Trim0_Noise_Mean.csv", dtype=float, delimiter=',')
+    data_Trim5 = np.loadtxt(filename + "_Trim5_Noise_Mean.csv", dtype=float, delimiter=',')
+    data_TrimA = np.loadtxt(filename + "_TrimA_Noise_Mean.csv", dtype=float, delimiter=',')
+    data_TrimF = np.loadtxt(filename + "_TrimF_Noise_Mean.csv", dtype=float, delimiter=',')
+    data_Equal = np.loadtxt(filename + "_TrimBest_Noise_Predict.csv", dtype=int, delimiter=',')
+    data_Equal_05 = np.loadtxt(filename + "_TrimBest_Noise_predict_0_5.csv", dtype=int, delimiter=',')
+    data_Equal_F5 = np.loadtxt(filename + "_TrimBest_Noise_predict_F_5.csv", dtype=int, delimiter=',')
+
     if (addCont):
       data_Control = np.loadtxt(filename+"_Control_Noise_Mean.csv", dtype=int, delimiter=',')
   except:
@@ -46,8 +58,14 @@ def plot_scan(filename, dacMin, dacMax):
   dacBinE = np.arange(dacMin, dacMax+1, 1)
 
   hist_data_Trim0 = np.histogram(data_Trim0, bins=dacBinE)
+  hist_data_Trim5 = np.histogram(data_Trim5, bins=dacBinE)
+  hist_data_TrimA = np.histogram(data_TrimA, bins=dacBinE)
   hist_data_TrimF = np.histogram(data_TrimF, bins=dacBinE)
   hist_data_Equal = np.histogram(data_Equal, bins=dacBinE)
+  hist_data_Equal_05 = np.histogram(data_Equal_05, bins=dacBinE)
+  hist_data_Equal_f5 = np.histogram(data_Equal_F5, bins=dacBinE)
+
+
   if (addCont):
     hist_data_Control = np.histogram(data_Control, bins=dacBinE)
   # compute the highest value rounded to nearest 1000
@@ -56,7 +74,7 @@ def plot_scan(filename, dacMin, dacMax):
   target = np.mean( 0.5*(data_Trim0[(data_Trim0>0) & (data_TrimF>0)]+data_TrimF[(data_Trim0>0) & (data_TrimF>0)]) )
 
   ### Plot ###
-  theFig = plt.figure(figsize=(6,6), facecolor='white')
+  theFig = plt.figure(figsize=(6, 6), facecolor='white')
   asic = asic_name(velopix)
   mytext = "%s/%s" % (asic, velopix)
   theFig.suptitle(mytext, fontsize=20, horizontalalignment='center', verticalalignment='center', color='black')
@@ -80,7 +98,7 @@ def plot_scan(filename, dacMin, dacMax):
   ### Axes ###
   plt.axis([dacMin,dacMax,0.9,hist_max])
   plt.xticks(np.arange(dacMin,dacMax+1,100), fontsize=9)
-  plt.subplot(111).xaxis.set_ticks(np.arange(dacMin, dacMax+1,20), True)
+  plt.subplot(111).xaxis.set_ticks(np.arange(dacMin, dacMax+1, 20))
 
   for tick in plt.subplot(111).yaxis.get_major_ticks():
     tick.label.set_fontsize(15)
@@ -189,7 +207,8 @@ def plot_trim(filename):
     ### Plot ###
     theFig = plt.figure(figsize=(6,6), facecolor='white')
 
-    cMap = plt.cm.viridis
+    # cMap = plt.cm.viridis
+    cMap = mpl.cm.get_cmap("viridis").copy()
     cMap.set_bad('red', 1.0)
 
     plt.imshow(mtrim, aspect=1, cmap=cMap, origin='lower')
@@ -238,7 +257,8 @@ def plot_noise_matrix(filename, trim) :
     ### Plot ###
     theFig = plt.figure(figsize=(6,6), facecolor='white')
 
-    cMap = plt.cm.viridis
+    # cMap = plt.cm.viridis
+    cMap = mpl.cm.get_cmap("viridis").copy()
     cMap.set_bad('red', 1.0)
 
     plt.imshow(mnoise, aspect=1, cmap=cMap, origin='lower')
@@ -262,8 +282,9 @@ def plot_noise_matrix(filename, trim) :
     ### Save ###
     plt.savefig(filename+"_Plot_Matrix_Noise_"+trim+".png", bbox_inches='tight', format='png')
 
+
 ### Plot Noise Histogram ###
-def plot_noise_histogram(filename, trim) :
+def plot_noise_histogram(filename, trim):
 
     ### Load Data ###
     try:
@@ -275,7 +296,7 @@ def plot_noise_histogram(filename, trim) :
       noise = np.zeros((256, 256))
       mask  = np.ones((256, 256))
 
-    mnoise = np.ma.masked_where(mask>0, noise)
+    mnoise = np.ma.masked_where(mask > 0, noise)
 
     max_n = np.max(mnoise)
     min_n = np.min(mnoise)
@@ -308,9 +329,10 @@ def plot_noise_histogram(filename, trim) :
     plt.hist(even_noise[even_noise[:]>0].flatten(), bins=edges, histtype='step', color='red')
 
     plt.axis([xmin, xmax,0.09,10000])       # set the limits of the x and y axis
-    plt.yscale('log', nonposy='clip')       # set the y-axis to log scale
+    plt.yscale('log')                       # set the y-axis to log scale
+    #
     plt.xticks(np.arange(xmin, xmax+1,1))
-    plt.subplot(111).xaxis.set_ticks(np.arange(xmin, xmax+0.2,0.2), True)
+    plt.subplot(111).xaxis.set_ticks(np.arange(xmin, xmax+0.2,0.2))
     for tick in plt.subplot(111).yaxis.get_major_ticks():
       tick.label.set_fontsize(15)
     plt.subplot(111).axes.tick_params(direction='in', which='both', bottom=True, top=True, left=True, right=True)
@@ -321,13 +343,13 @@ def plot_noise_histogram(filename, trim) :
     plt.text(4.25, 0.3, mytext, fontsize=14, horizontalalignment='left', verticalalignment='center', color='blue')
     mytext = "Even Col.:  %0.2f +/- %0.2f  -  [%0.2f,%0.2f]" % (mean_e, std_e, min_e, max_e)
     plt.text(4.25, 0.15, mytext, fontsize=14, horizontalalignment='left', verticalalignment='center', color='red')
-
+    plt.show()
     ### Save ###
     plt.savefig(filename+"_Plot_Hist_Noise_"+trim+".png", bbox_inches='tight', format='png')
 
 if (len(sys.argv)!=4):
-    print "Usage: python plotting_equalisation.py <file prefix> minThr maxThr"
-    print "Example: python plotting_equalisation.py /home/velo/tmp/Module1_VP0-0 1100 1800"
+    print("Usage: python plotting_equalisation.py <file prefix> minThr maxThr")
+    print("Example: python plotting_equalisation.py /home/velo/tmp/Module1_VP0-0 1100 1800")
     exit
 
 prefix = sys.argv[1]
