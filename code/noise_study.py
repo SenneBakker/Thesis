@@ -158,15 +158,15 @@ def plot_pixel():
       for j in range(0, run1_trim0[i,1]):
         run1_array.append(run1_trim0[i,0])
     #run1_hist = np.histogram(run1_array, bins=90, range=(1100,1550))
-    print "Run 1:", np.mean(run1_array), np.std(run1_array)
+    print("Run 1:", np.mean(run1_array), np.std(run1_array))
 
     run2_array = []
     for i in range(0, len(run2_trim0)):
       for j in range(0, run2_trim0[i,1]):
         run2_array.append(run2_trim0[i,0])
     #run2_hist = np.histogram(run2_array, bins=90, range=(1100,1550))
-    print "Run 2:", np.mean(run2_array), np.std(run2_array)
-    print "Ratio:", np.std(run1_array)/np.std(run2_array)
+    print("Run 2:", np.mean(run2_array), np.std(run2_array))
+    print("Ratio:", np.std(run1_array)/np.std(run2_array))
 
     ### Plot ###
     theFig = plt.figure(figsize=(8,6), facecolor='white')
@@ -185,7 +185,7 @@ def compare_noise(filename):
     velopix = filename.split('_')[-1]
     files = sorted(glob.glob(filename+"_ECS_Scan_Trim*_Noise_Fit_Width.csv"))
 
-    scans = [0,1,3,13,15]
+    scans = [0, 1, 3, 13, 15]
     widths0 = []
     widths1 = []
     widths2 = []
@@ -193,13 +193,13 @@ def compare_noise(filename):
 
     for i in range(len(files)):
       data = np.loadtxt(files[i], dtype=float, delimiter=',')
-      widths0.append(data[0,0])
-      widths1.append(data[0,1])
-      widths2.append(data[0,2])
-      widths3.append(data[0,3])
+      widths0.append(data[0, 0])
+      widths1.append(data[0, 1])
+      widths2.append(data[0, 2])
+      widths3.append(data[0, 3])
 
     ### Plot ###
-    theFig = plt.figure(figsize=(6,6), facecolor='white')
+    theFig = plt.figure(figsize=(6, 6), facecolor='white')
     mytext = "%s" % (velopix)
     theFig.suptitle(mytext, fontsize=20, horizontalalignment='center', verticalalignment='center', color='black')
 

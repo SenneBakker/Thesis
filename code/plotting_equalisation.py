@@ -5,6 +5,7 @@ import math
 import glob
 import numpy as np
 import matplotlib as mpl
+from matplotlib import cm
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
@@ -203,19 +204,19 @@ def plot_trim(filename):
       trim = np.zeros((256,256))-1
       mask = np.zeros((256, 256)) - 1
 
-    mtrim = np.ma.masked_where(mask>0, trim)
+    mtrim = np.ma.masked_where(mask > 0, trim)
 
     ### Plot ###
-    theFig = plt.figure(figsize=(6,6), facecolor='white')
+    # theFig = plt.figure(figsize=(6,6), facecolor='white')
 
     # cMap = plt.cm.viridis
     cMap = mpl.cm.get_cmap("viridis").copy()
     cMap.set_bad('red', 1.0)
 
     plt.imshow(mtrim, aspect=1, cmap=cMap, origin='lower')
-    plt.axis([-2,257,-2,257]) # to better visualise the border
-    plt.xticks(np.arange(0,257,16), fontsize=8)
-    plt.yticks(np.arange(0,257,16), fontsize=8)
+    plt.axis([-2, 257, -2, 257])  # to better visualise the border
+    plt.xticks(np.arange(0, 257, 16), fontsize=8)
+    plt.yticks(np.arange(0, 257, 16), fontsize=8)
     
     asic = asic_name(velopix)
     mytext = "%s/%s" % (asic, velopix)
@@ -225,10 +226,9 @@ def plot_trim(filename):
 
     plt.legend(bbox_to_anchor=(1.042,0.075), loc=2, borderaxespad=0, handles=[red_patch], frameon=False, handlelength=1.25)
     plt.colorbar(fraction=0.035)
-    plt.clim(0,15)
+    plt.clim(0, 15)
 
     # Fix aspect ratio
-    plt.axes().set_aspect('equal')
 
     ### Save ###
     plt.savefig(filename+"_Plot_Matrix_Trim.png", bbox_inches='tight', format='png')
@@ -275,10 +275,10 @@ def plot_noise_matrix(filename, trim) :
 
     plt.legend(bbox_to_anchor=(1.042,0.075), loc=2, borderaxespad=0, handles=[red_patch], frameon=False, handlelength=1.25)
     plt.colorbar(fraction=0.035)
-    plt.clim(4,8)
+    plt.clim(4, 8)
 
     # Fix aspect ratio
-    plt.axes().set_aspect('equal')
+    # plt.axes().set_aspect('equal')
 
     ### Save ###
     plt.savefig(filename+"_Plot_Matrix_Noise_"+trim+".png", bbox_inches='tight', format='png')
@@ -344,7 +344,6 @@ def plot_noise_histogram(filename, trim):
     plt.text(4.25, 0.3, mytext, fontsize=14, horizontalalignment='left', verticalalignment='center', color='blue')
     mytext = "Even Col.:  %0.2f +/- %0.2f  -  [%0.2f,%0.2f]" % (mean_e, std_e, min_e, max_e)
     plt.text(4.25, 0.15, mytext, fontsize=14, horizontalalignment='left', verticalalignment='center', color='red')
-    # plt.show()
     ### Save ###
     plt.savefig(filename+"_Plot_Hist_Noise_"+trim+".png", bbox_inches='tight', format='png')
 
@@ -358,8 +357,8 @@ minThr = int(sys.argv[2])
 maxThr = int(sys.argv[3])
 
 # plot_scan(prefix, minThr, maxThr)
-plot_mask(prefix)
-# plot_trim(prefix)
+# plot_mask(prefix)
+plot_trim(prefix)
 # plot_noise_matrix(prefix, "Trim0")
 # plot_noise_histogram(prefix, "Trim0")
 # plot_noise_matrix(prefix, "TrimF")

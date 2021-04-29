@@ -23,10 +23,10 @@ def plot_scans(filename, dacMin, dacMax):
   ### Histogram ###
   dacBinE = np.arange(dacMin, dacMax+1, 1)
   hist_max = 10000
-  eps = 0.01
+  eps = 0.1
 
   ### Plot ###
-  theFig = plt.figure(figsize=(6,6), facecolor='white')
+  theFig = plt.figure(figsize=(6, 6), facecolor='white')
   mytext = "%s" % (velopix)
   theFig.suptitle(mytext, fontsize=20, horizontalalignment='center', verticalalignment='center', color='black')
 
@@ -39,7 +39,7 @@ def plot_scans(filename, dacMin, dacMax):
     data = np.loadtxt(files[i], dtype=int, delimiter=',')
     hist_data = np.histogram(data, bins=dacBinE)
     logs = hist_data[0].astype(float)
-    logs[logs==0] = eps
+    logs[logs == 0] = eps
     plt.semilogy(hist_data[1][:-1], logs, color=mycolors[i], linestyle='-', linewidth=2)
 
     words = files[i].split('_')
@@ -51,9 +51,9 @@ def plot_scans(filename, dacMin, dacMax):
 
 
   ### Axes ###
-  plt.axis([dacMin,dacMax,0.9,hist_max])
-  plt.xticks(np.arange(dacMin,dacMax+1,100), fontsize=9)
-  plt.subplot(111).xaxis.set_ticks(np.arange(dacMin, dacMax+1,20), True)
+  plt.axis([dacMin, dacMax, 0.9, hist_max])
+  plt.xticks(np.arange(dacMin, dacMax+1, 100), fontsize=9)
+  plt.subplot(111).xaxis.set_ticks(np.arange(dacMin, dacMax+1,100))
 
   for tick in plt.subplot(111).yaxis.get_major_ticks():
     tick.label.set_fontsize(15)
@@ -82,4 +82,5 @@ minThr = int(sys.argv[2])
 maxThr = int(sys.argv[3])
 
 plot_scans(prefix, minThr, maxThr)
+plt.show()
 
