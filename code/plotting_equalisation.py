@@ -156,7 +156,8 @@ def plot_mask(filename):
   bitmap[mask==0] = [0.9,0.9,0.9] # No mask: light grey
 
   ### Plot ###
-  theFig = plt.figure(figsize=(6,6), facecolor='white')
+  # theFig = plt.figure(figsize=(6,6), facecolor='white')
+  # plt.axes().set_aspect('equal')
   plt.imshow(bitmap, aspect=1, origin='lower')
   plt.axis([-2,257,-2,257]) # to better visualise the border
   plt.xticks(np.arange(0,257,16), fontsize=8)
@@ -181,7 +182,6 @@ def plot_mask(filename):
   plt.legend(bbox_to_anchor=(1.042,0.3), loc=2, borderaxespad=0, handles=[catA,catB,catC,catD,catE,catT], frameon=False, handlelength=1.25)
 
   # Fix aspect ratio
-  plt.axes().set_aspect('equal')
 
   ### Save ###
 #  plt.show()
@@ -356,11 +356,11 @@ prefix = sys.argv[1]
 minThr = int(sys.argv[2])
 maxThr = int(sys.argv[3])
 
-plot_scan(prefix, minThr, maxThr)
+# plot_scan(prefix, minThr, maxThr)
 plot_mask(prefix)
-plot_trim(prefix)
-plot_noise_matrix(prefix, "Trim0")
-plot_noise_histogram(prefix, "Trim0")
-plot_noise_matrix(prefix, "TrimF")
-plot_noise_histogram(prefix, "TrimF")
-
+# plot_trim(prefix)
+# plot_noise_matrix(prefix, "Trim0")
+# plot_noise_histogram(prefix, "Trim0")
+# plot_noise_matrix(prefix, "TrimF")
+# plot_noise_histogram(prefix, "TrimF")
+plt.show()
