@@ -142,49 +142,50 @@ def plot_mask(filename):
   except:
     #occurs if the file doesn't exist
     velopix = "No File"
-    mask = np.zeros((256,256))-1
+    mask = np.zeros((256, 256))-1
 
   nMasked = np.count_nonzero(mask)
 
   ### Set the colours ###
-  bitmap = np.zeros((256,256,3)) # create a 256x256x3 array where each pixel has an RGB value of 1-bit representation
-  bitmap[mask==1] = [0,0,0] # Cat A: black
-  bitmap[mask==2] = [1,0,0] # Cat B: red
-  bitmap[mask==3] = [0,0,1] # Cat C: blue
-  bitmap[mask==4] = [0,0.502,0] # Cat D: green
-  bitmap[mask==5] = [1,0.647,0] # Cat E: orange -> from matplotlib.color.to_rgba("orange")
-  bitmap[mask==0] = [0.9,0.9,0.9] # No mask: light grey
+  bitmap = np.zeros((256, 256, 3)) # create a 256x256x3 array where each pixel has an RGB value of 1-bit representation
+  bitmap[mask == 1] = [0, 0, 0] # Cat A: black
+  bitmap[mask == 2] = [1, 0, 0] # Cat B: red
+  bitmap[mask == 3] = [0, 0, 1] # Cat C: blue
+  bitmap[mask == 4] = [0, 0.502, 0] # Cat D: green
+  bitmap[mask == 5] = [1, 0.647, 0] # Cat E: orange -> from matplotlib.color.to_rgba("orange")
+  bitmap[mask == 0] = [0.9, 0.9, 0.9] # No mask: light grey
 
   ### Plot ###
   theFig = plt.figure(figsize=(6,6), facecolor='white')
+  # plt.axes().set_aspect('equal')  # seems to have no effect
   plt.imshow(bitmap, aspect=1, origin='lower')
-  plt.axis([-2,257,-2,257]) # to better visualise the border
-  plt.xticks(np.arange(0,257,16), fontsize=8)
-  plt.yticks(np.arange(0,257,16), fontsize=8)
+  plt.axis([-2, 257, -2, 257])  # to better visualise the border
+  plt.xticks(np.arange(0, 257, 16), fontsize=8)
+  plt.yticks(np.arange(0, 257, 16), fontsize=8)
   
   asic = asic_name(velopix)
   mytext = "%s/%s - Masked %d pixels" % (asic, velopix, nMasked)
   plt.text(128, 266, mytext, fontsize=20, horizontalalignment='center', verticalalignment='center', color='black')
   
-  mytext = "Cat A: %d" % (np.count_nonzero(mask==1))
+  mytext = "Cat A: %d" % (np.count_nonzero(mask == 1))
   catA = mpatches.Patch(color='black', label=mytext)
-  mytext = "Cat B: %d" % (np.count_nonzero(mask==2))
+  mytext = "Cat B: %d" % (np.count_nonzero(mask == 2))
   catB = mpatches.Patch(color='red', label=mytext)
-  mytext = "Cat C: %d" % (np.count_nonzero(mask==3))
+  mytext = "Cat C: %d" % (np.count_nonzero(mask == 3))
   catC = mpatches.Patch(color='blue', label=mytext)
-  mytext = "Cat D: %d" % (np.count_nonzero(mask==4))
+  mytext = "Cat D: %d" % (np.count_nonzero(mask == 4))
   catD = mpatches.Patch(color='green', label=mytext)
-  mytext = "Cat E: %d" % (np.count_nonzero(mask==5))
+  mytext = "Cat E: %d" % (np.count_nonzero(mask == 5))
   catE = mpatches.Patch(color='orange', label=mytext)
   mytext = "Tot: %d" % (nMasked)
   catT = mpatches.Patch(color='white', label=mytext)
-  plt.legend(bbox_to_anchor=(1.042,0.3), loc=2, borderaxespad=0, handles=[catA,catB,catC,catD,catE,catT], frameon=False, handlelength=1.25)
+  plt.legend(bbox_to_anchor=(1.042, 0.3), loc=2, borderaxespad=0, handles=[catA, catB, catC, catD,catE,catT], frameon=False, handlelength=1.25)
 
   # Fix aspect ratio
-  plt.axes().set_aspect('equal')
+
 
   ### Save ###
-#  plt.show()
+  # plt.show()
   plt.savefig(filename+"_Plot_Matrix_Mask.png", bbox_inches='tight', format='png')
 
 
@@ -325,8 +326,8 @@ def plot_noise_histogram(filename, trim):
     xmax = 10
     edges = [i/10.0 for i in range(10*xmin,10*xmax+1)]  # set the x-axis edges of the histogram from xmin to xmax in steps of 0.1
     plt.hist(noise[noise[:]>0].flatten(), bins=edges, histtype='step', color='black')
-    plt.hist(odd_noise[odd_noise[:]>0].flatten(), bins=edges, histtype='step', color='blue')
-    plt.hist(even_noise[even_noise[:]>0].flatten(), bins=edges, histtype='step', color='red')
+    plt.hist(odd_noise[odd_noise[:] > 0].flatten(), bins=edges, histtype='step', color='blue')
+    plt.hist(even_noise[even_noise[:] > 0].flatten(), bins=edges, histtype='step', color='red')
 
     plt.axis([xmin, xmax,0.09,10000])       # set the limits of the x and y axis
     plt.yscale('log')                       # set the y-axis to log scale
@@ -343,7 +344,7 @@ def plot_noise_histogram(filename, trim):
     plt.text(4.25, 0.3, mytext, fontsize=14, horizontalalignment='left', verticalalignment='center', color='blue')
     mytext = "Even Col.:  %0.2f +/- %0.2f  -  [%0.2f,%0.2f]" % (mean_e, std_e, min_e, max_e)
     plt.text(4.25, 0.15, mytext, fontsize=14, horizontalalignment='left', verticalalignment='center', color='red')
-    plt.show()
+    # plt.show()
     ### Save ###
     plt.savefig(filename+"_Plot_Hist_Noise_"+trim+".png", bbox_inches='tight', format='png')
 
@@ -356,11 +357,13 @@ prefix = sys.argv[1]
 minThr = int(sys.argv[2])
 maxThr = int(sys.argv[3])
 
-plot_scan(prefix, minThr, maxThr)
+# plot_scan(prefix, minThr, maxThr)
 plot_mask(prefix)
-plot_trim(prefix)
-plot_noise_matrix(prefix, "Trim0")
-plot_noise_histogram(prefix, "Trim0")
-plot_noise_matrix(prefix, "TrimF")
-plot_noise_histogram(prefix, "TrimF")
+# plot_trim(prefix)
+# plot_noise_matrix(prefix, "Trim0")
+# plot_noise_histogram(prefix, "Trim0")
+# plot_noise_matrix(prefix, "TrimF")
+# plot_noise_histogram(prefix, "TrimF")
+
+plt.show()
 
