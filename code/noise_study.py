@@ -158,15 +158,15 @@ def plot_pixel():
       for j in range(0, run1_trim0[i,1]):
         run1_array.append(run1_trim0[i,0])
     #run1_hist = np.histogram(run1_array, bins=90, range=(1100,1550))
-    print "Run 1:", np.mean(run1_array), np.std(run1_array)
+    print("Run 1:", np.mean(run1_array), np.std(run1_array))
 
     run2_array = []
     for i in range(0, len(run2_trim0)):
       for j in range(0, run2_trim0[i,1]):
         run2_array.append(run2_trim0[i,0])
     #run2_hist = np.histogram(run2_array, bins=90, range=(1100,1550))
-    print "Run 2:", np.mean(run2_array), np.std(run2_array)
-    print "Ratio:", np.std(run1_array)/np.std(run2_array)
+    print("Run 2:", np.mean(run2_array), np.std(run2_array))
+    print("Ratio:", np.std(run1_array)/np.std(run2_array))
 
     ### Plot ###
     theFig = plt.figure(figsize=(8,6), facecolor='white')
