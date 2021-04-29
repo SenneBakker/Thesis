@@ -88,20 +88,24 @@ int load_mean(string filename, uint16_t* matrix)
 int main(int argc, char* argv[])
 {
   // === Input ===
-  if (argc==1) {
-    cout << "[dim_equalisation] FAILED: please specify input file (prefix)";
+  if (argc<4) {
+    cout << "[dim_equalisation] FAILED: please specify input file (prefix) and trim levels";
     return 0;
   }
   string prefix = argv[1];
+    string firsttrim = argv[2];
+    string sectrim = argv[3];
+    cout << firsttrim << sectrim;
+    cout << "\n\n";
   int dacRange = 25; // Tuneable parameter
 
     
 
   // === Load Trim 0 and Trim F Means ===
   uint16_t mean_trim0[256*256];
-  load_mean(prefix+"_Trim0_Noise_Mean.csv", mean_trim0);
+  load_mean(prefix+"_Trim"+firsttrim+"_Noise_Mean.csv", mean_trim0);
   uint16_t mean_trimF[256*256];
-  load_mean(prefix+"_TrimF_Noise_Mean.csv", mean_trimF);
+  load_mean(prefix+"_Trim"+sectrim+"_Noise_Mean.csv", mean_trimF);
   uint16_t mean_trim5[256*256];
   load_mean(prefix + "_Trim5_Noise_Mean.csv", mean_trim5);
   uint16_t mean_trimA[256*256];
