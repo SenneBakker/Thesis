@@ -181,10 +181,7 @@ def plot_mask(filename):
   catT = mpatches.Patch(color='white', label=mytext)
   plt.legend(bbox_to_anchor=(1.042,0.3), loc=2, borderaxespad=0, handles=[catA,catB,catC,catD,catE,catT], frameon=False, handlelength=1.25)
 
-  # Fix aspect ratio
-
   ### Save ###
-#  plt.show()
   plt.savefig(filename+"_Plot_Matrix_Mask.png", bbox_inches='tight', format='png')
 
 
