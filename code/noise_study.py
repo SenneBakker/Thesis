@@ -185,7 +185,7 @@ def compare_noise(filename):
     velopix = filename.split('_')[-1]
     files = sorted(glob.glob(filename+"_ECS_Scan_Trim*_Noise_Fit_Width.csv"))
 
-    scans = [0,1,3,13,15]
+    scans = [0, 1, 3, 13, 15]
     widths0 = []
     widths1 = []
     widths2 = []
@@ -193,13 +193,13 @@ def compare_noise(filename):
 
     for i in range(len(files)):
       data = np.loadtxt(files[i], dtype=float, delimiter=',')
-      widths0.append(data[0,0])
-      widths1.append(data[0,1])
-      widths2.append(data[0,2])
-      widths3.append(data[0,3])
+      widths0.append(data[0, 0])
+      widths1.append(data[0, 1])
+      widths2.append(data[0, 2])
+      widths3.append(data[0, 3])
 
     ### Plot ###
-    theFig = plt.figure(figsize=(6,6), facecolor='white')
+    theFig = plt.figure(figsize=(6, 6), facecolor='white')
     mytext = "%s" % (velopix)
     theFig.suptitle(mytext, fontsize=20, horizontalalignment='center', verticalalignment='center', color='black')
 
