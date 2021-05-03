@@ -321,9 +321,9 @@ def plot_noise_histogram(filename, trim):
     xmin = 4
     xmax = 10
     edges = [i/10.0 for i in range(10*xmin,10*xmax+1)]  # set the x-axis edges of the histogram from xmin to xmax in steps of 0.1
-    plt.hist(noise[noise[:]>0].flatten(), bins=edges, histtype='step', color='black')
-    plt.hist(odd_noise[odd_noise[:]>0].flatten(), bins=edges, histtype='step', color='blue')
-    plt.hist(even_noise[even_noise[:]>0].flatten(), bins=edges, histtype='step', color='red')
+    plt.hist(noise[noise[:] > 0].flatten(), bins=edges, histtype='step', color='black')
+    plt.hist(odd_noise[odd_noise[:] > 0].flatten(), bins=edges, histtype='step', color='blue')
+    plt.hist(even_noise[even_noise[:] > 0].flatten(), bins=edges, histtype='step', color='red')
 
     plt.axis([xmin, xmax,0.09,10000])       # set the limits of the x and y axis
     plt.yscale('log')                       # set the y-axis to log scale
