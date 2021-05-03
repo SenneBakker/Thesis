@@ -9,11 +9,6 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
 
-
-
-
-
-
 ### Plot Scan Summary ###
 def plot_scans(filename, dacMin, dacMax):
 
