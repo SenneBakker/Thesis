@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
     int test_mean_trimA = 0;
     
     
-    // === iterating over array of matrices seems to be working. 
+  // === iterating over array of matrices seems to be working.
   int nhits = 0;
   for (int i=0; i<256*256; ++i) {
     if (mean_trim0[i]>0 && mean_trimF[i]>0 && mean_trim5[i]>0 && mean_trimA[i]>0) {
