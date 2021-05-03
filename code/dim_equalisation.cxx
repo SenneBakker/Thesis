@@ -89,27 +89,48 @@ int main(int argc, char* argv[])
 {
   // === Input ===
   if (argc<4) {
-    cout << "[dim_equalisation] FAILED: please specify input file (prefix) and trim levels";
+    cout << "[dim_equalisation] FAILED: Input was incorrect" << endl;
+    cout << "[dim_equalisation] Usage: ./dim_equalisation prefix Trim1 trim2 ... " << endl;
+    cout << "\n\n";
     return 0;
   }
   string prefix = argv[1];
-    string firsttrim = argv[2];
-    string sectrim = argv[3];
-    cout << firsttrim << sectrim;
-    cout << "\n\n";
-  int dacRange = 25; // Tuneable parameter
-
     
+    // === initializing vector to track trim levels === //
+    vector<string> trimvec(10);
+    for (int i=2; i<argc; i++){
+        trimvec[i-2] = argv[i];
+    }
+    
+    int dacRange = 25; // Tuneable parameter
+    
+    
+// === should be array of matrices of dim. (256x256). Should be possible ===/
+    uint16_t matrixarray[10][256*256];
+//    cout << endl << prefix+"_Trim"+argv[4]+"_Noise_Mean.csv"<< endl;
+//    load_mean(prefix+"_Trim"+argv[4]+"_Noise_Mean.csv", matrixarray[0]);
+//    load_mean(prefix+"_Trim"+argv[3]+"_Noise_Mean.csv", matrixarray[1]);
+    
+    for (int i=0; i<argc-2; i++)
+    {
+//        cout << argv[i+2] << endl << i << endl;
+        load_mean(prefix+"_Trim"+argv[i+2]+"_Noise_Mean.csv", matrixarray[i]);
+//        cout << *matrixarray[i] << endl;
+    }
 
   // === Load Trim 0 and Trim F Means ===
   uint16_t mean_trim0[256*256];
-  load_mean(prefix+"_Trim"+firsttrim+"_Noise_Mean.csv", mean_trim0);
+  load_mean(prefix + "_Trim0_Noise_Mean.csv", mean_trim0);
   uint16_t mean_trimF[256*256];
-  load_mean(prefix+"_Trim"+sectrim+"_Noise_Mean.csv", mean_trimF);
+  load_mean(prefix + "_TrimF_Noise_Mean.csv", mean_trimF);
   uint16_t mean_trim5[256*256];
   load_mean(prefix + "_Trim5_Noise_Mean.csv", mean_trim5);
   uint16_t mean_trimA[256*256];
   load_mean(prefix + "_TrimA_Noise_Mean.csv", mean_trimA);
+    
+//    for (int i=0; i<10; i++){
+//        cout << matrixarray[1][i] << endl;
+//    }
 
     
   // === Calculate Target ===
@@ -118,6 +139,14 @@ int main(int argc, char* argv[])
   int glob_mean_trimF = 0;
   int glob_mean_trim5 = 0;
   int glob_mean_trimA = 0;
+    // === added for test ===/
+    int test_mean_trim0 = 0;
+    int test_mean_trimF = 0;
+    int test_mean_trim5 = 0;
+    int test_mean_trimA = 0;
+    
+    
+    // === iterating over array of matrices seems to be working. 
   int nhits = 0;
   for (int i=0; i<256*256; ++i) {
     if (mean_trim0[i]>0 && mean_trimF[i]>0 && mean_trim5[i]>0 && mean_trimA[i]>0) {
@@ -125,9 +154,24 @@ int main(int argc, char* argv[])
       glob_mean_trimF += mean_trimF[i];
       glob_mean_trim5 += mean_trim5[i];
       glob_mean_trimA += mean_trimA[i];
+        test_mean_trim0 += matrixarray[0][i];
+        test_mean_trim5 += matrixarray[1][i];
+        test_mean_trimA += matrixarray[2][i];
+        test_mean_trimF += matrixarray[3][i];
       nhits++;
     }
   }
+    
+    cout << "mean tests:" << endl;
+    cout << test_mean_trim0 << endl << test_mean_trim5 << endl << test_mean_trimA << endl << test_mean_trimF << endl;
+    cout << "\n\n";
+    cout << "mean normal:" << endl;
+    cout<< glob_mean_trim0 << endl << glob_mean_trim5 << endl << glob_mean_trimA << endl << glob_mean_trimF << endl;
+    
+    
+    
+    
+    
   if (nhits==0) {
     cout << "[dim_equalisation] FAILED: Threshold scan has empty output file" << endl;
     return 0;
