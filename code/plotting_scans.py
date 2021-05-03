@@ -14,6 +14,7 @@ def plot_scans(filename, dacMin, dacMax):
 
   velopix = filename.split('_')[-1]
   files = sorted(glob.glob(filename+"_Trim*_Noise_Mean.csv"))
+  print(files)
 
   ### Histogram ###
   dacBinE = np.arange(dacMin, dacMax+1, 1)
