@@ -80,6 +80,25 @@ int load_mean(string filename, uint16_t* matrix)
 }
 
 
+bool IsZero(uint16_t dat[10][256*256], int iter, int count)
+{
+    int allok = 0;
+    for (int i=0; i<count; i++){
+        if (dat[i][iter]>0)
+        {
+            allok +=1;
+        }
+        else
+        {
+            return false;
+            break;
+        }
+        }
+    if (allok == count){
+        allok = 0;
+        return true;
+    }
+}
 
 // ======================================
 //
@@ -132,11 +151,42 @@ int main(int argc, char* argv[])
   int glob_mean_trim5 = 0;
   int glob_mean_trimA = 0;
     // === added for test ===/
+    std::map<string, float> means;
     int test_mean_trim0 = 0;
     int test_mean_trimF = 0;
     int test_mean_trim5 = 0;
     int test_mean_trimA = 0;
     
+    
+    
+    // === hits are roughly six times too high. for loop (i) could be removed however than trimvec[i] is fucked. Other way around in IsZero needs to have an iteration over all arguments since the condition (<0) should be satified simultaneously for every trim. ===
+    int nohits = 0;
+    for (int i=0; i<argc; i++){
+        for (int j=0; j<256*256; j++){
+            if (IsZero(matrixarray, j, argc-2)){
+                means["test_mean" + trimvec[i]] += matrixarray[i][j];
+                nohits++;
+            }
+        }
+    }
+    cout << endl << nohits << " self" << endl;
+
+
+    
+//
+//    for (int i=155; i<165; i++){
+//        if (IsZero(matrixarray, i, argc-2))
+//        {
+////            cout << "Test worked" << endl;
+//        }
+//        else if (IsZero(matrixarray,i,argc-2)==false)
+//        {
+//            cout << "one of the values was zero" << endl;
+//        }
+//    }
+
+
+
     
   // === iterating over array of matrices seems to be working.
   int nhits = 0;
@@ -153,14 +203,11 @@ int main(int argc, char* argv[])
       nhits++;
     }
   }
+    cout << endl << nhits << " original" << "\n\n";
     
-    
-    
-    std::map<string, float> means;
-    means["mean_trim0"] = test_mean_trim0;
-    
-    
-    
+    for (int i=0; i<argc; i++){
+        means["mean_trim"+trimvec[i]] = test_mean_trim0;
+    }
     
   if (nhits==0) {
     cout << "[dim_equalisation] FAILED: Threshold scan has empty output file" << endl;
@@ -302,20 +349,20 @@ int main(int argc, char* argv[])
   achieved_width_F_5 = sqrt(achieved_width_F_5/(256*256-nmasked-1));
     
     
-  cout << "[dim_equalisation] Summary" << endl;
-  cout << "  Trim 0 distribution: " << glob_mean_trim0 << " +/- " << round(glob_width_trim0) << endl;
-  cout << "  Trim 5 distribution: " << glob_mean_trim5 << " +/- " << round(glob_width_trim5) << endl;
-  cout << "  Trim A distribution: " << glob_mean_trimA << " +/- " << round(glob_width_trimA) << endl;
-  cout << "  Trim F distribution: " << glob_mean_trimF << " +/- " << round(glob_width_trimF) << endl;
-    cout << "\n\n";
-    
-  cout << "  Mean of widths: " << (glob_width_trim0 + glob_width_trim5 + glob_width_trimA + glob_width_trimF)/4 << endl;
-
-  cout << "  Equalisation Target: " << target << endl;
-  char buffer[25];
-  sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
-  cout << buffer << endl;
-  cout << "  Masked Pixels: " << nmasked << endl;
+//  cout << "[dim_equalisation] Summary" << endl;
+//  cout << "  Trim 0 distribution: " << glob_mean_trim0 << " +/- " << round(glob_width_trim0) << endl;
+//  cout << "  Trim 5 distribution: " << glob_mean_trim5 << " +/- " << round(glob_width_trim5) << endl;
+//  cout << "  Trim A distribution: " << glob_mean_trimA << " +/- " << round(glob_width_trimA) << endl;
+//  cout << "  Trim F distribution: " << glob_mean_trimF << " +/- " << round(glob_width_trimF) << endl;
+//    cout << "\n\n";
+//
+//  cout << "  Mean of widths: " << (glob_width_trim0 + glob_width_trim5 + glob_width_trimA + glob_width_trimF)/4 << endl;
+//
+//  cout << "  Equalisation Target: " << target << endl;
+//  char buffer[25];
+//  sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
+//  cout << buffer << endl;
+//  cout << "  Masked Pixels: " << nmasked << endl;
   
   // === Test Pulse Pattern ===
   // for completeness
