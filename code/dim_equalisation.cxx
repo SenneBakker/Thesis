@@ -162,6 +162,9 @@ int main(int argc, char* argv[])
     }
   }
     
+    
+    
+//    list<float> means = []
     cout << "mean tests:" << endl;
     cout << test_mean_trim0 << endl << test_mean_trim5 << endl << test_mean_trimA << endl << test_mean_trimF << endl;
     cout << "\n\n";
