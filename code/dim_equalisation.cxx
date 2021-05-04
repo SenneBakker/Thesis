@@ -12,6 +12,7 @@
 #include <vector>   // string splitting
 #include <list>
 #include <glob.h>
+#include <map>      // Dictionary-ish behaviour
 
 using namespace std;
 
@@ -103,19 +104,12 @@ int main(int argc, char* argv[])
     }
     
     int dacRange = 25; // Tuneable parameter
-    
-    
-// === should be array of matrices of dim. (256x256). Should be possible ===/
     uint16_t matrixarray[10][256*256];
-//    cout << endl << prefix+"_Trim"+argv[4]+"_Noise_Mean.csv"<< endl;
-//    load_mean(prefix+"_Trim"+argv[4]+"_Noise_Mean.csv", matrixarray[0]);
-//    load_mean(prefix+"_Trim"+argv[3]+"_Noise_Mean.csv", matrixarray[1]);
+
     
     for (int i=0; i<argc-2; i++)
     {
-//        cout << argv[i+2] << endl << i << endl;
         load_mean(prefix+"_Trim"+argv[i+2]+"_Noise_Mean.csv", matrixarray[i]);
-//        cout << *matrixarray[i] << endl;
     }
 
   // === Load Trim 0 and Trim F Means ===
@@ -128,9 +122,7 @@ int main(int argc, char* argv[])
   uint16_t mean_trimA[256*256];
   load_mean(prefix + "_TrimA_Noise_Mean.csv", mean_trimA);
     
-//    for (int i=0; i<10; i++){
-//        cout << matrixarray[1][i] << endl;
-//    }
+
 
     
   // === Calculate Target ===
@@ -164,13 +156,8 @@ int main(int argc, char* argv[])
     
     
     
-//    list<float> means = []
-    cout << "mean tests:" << endl;
-    cout << test_mean_trim0 << endl << test_mean_trim5 << endl << test_mean_trimA << endl << test_mean_trimF << endl;
-    cout << "\n\n";
-    cout << "mean normal:" << endl;
-    cout<< glob_mean_trim0 << endl << glob_mean_trim5 << endl << glob_mean_trimA << endl << glob_mean_trimF << endl;
-    
+    std::map<string, float> means;
+    means["mean_trim0"] = test_mean_trim0;
     
     
     
