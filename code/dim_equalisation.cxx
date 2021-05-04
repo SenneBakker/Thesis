@@ -159,16 +159,16 @@ int main(int argc, char* argv[])
     
     
     
-    // === hits are roughly six times too high. for loop (i) could be removed however than trimvec[i] is fucked. Other way around in IsZero needs to have an iteration over all arguments since the condition (<0) should be satified simultaneously for every trim. ===
+
     int nohits = 0;
-    for (int i=0; i<argc; i++){
+//    for (int i=0; i<argc; i++){
         for (int j=0; j<256*256; j++){
             if (IsZero(matrixarray, j, argc-2)){
-                means["test_mean" + trimvec[i]] += matrixarray[i][j];
+                means["test_mean" + trimvec[1]] += matrixarray[1][j];
                 nohits++;
             }
         }
-    }
+//    }
     cout << endl << nohits << " self" << endl;
 
 
