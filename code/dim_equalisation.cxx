@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
     
     
     
-
+    // === For loop (i) below should be removed. However, the keys in the dictionary cannot be evaluated in the right manner that way (trimvec[i]). ===
     int nohits = 0;
 //    for (int i=0; i<argc; i++){
         for (int j=0; j<256*256; j++){
