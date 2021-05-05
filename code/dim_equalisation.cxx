@@ -13,6 +13,7 @@
 #include <list>
 #include <glob.h>
 #include <map>      // Dictionary-ish behaviour
+#include <unordered_map>
 
 using namespace std;
 
@@ -80,24 +81,44 @@ int load_mean(string filename, uint16_t* matrix)
 }
 
 
-bool IsZero(uint16_t dat[10][256*256], int iter, int count)
+struct RetType{
+    int counter = 0;
+    int naming = 0;
+    bool IsTrue;
+    unordered_map<string, float> avg;
+   
+};
+
+
+RetType IsZero(uint16_t dat[10][256*256], int iter, int count, RetType iszeroreturn)
 {
-    int allok = 0;
     for (int i=0; i<count; i++){
+        iszeroreturn.naming = i;
         if (dat[i][iter]>0)
         {
-            allok +=1;
+            iszeroreturn.avg["test_mean" + to_string(i)] += dat[i][iter];
+            iszeroreturn.counter +=1;
+
+            
         }
         else
         {
-            return false;
-            break;
+            iszeroreturn.avg["test_mean" + to_string(i)] += dat[i][iter];
         }
         }
-    if (allok == count){
-        allok = 0;
-        return true;
+    
+    if (iszeroreturn.counter == count){
+        iszeroreturn.counter = 0;
+        iszeroreturn.naming = 0;
+        iszeroreturn.IsTrue = true;
+
     }
+    else if (iszeroreturn.counter != count){
+        iszeroreturn.counter = 0;
+        iszeroreturn.naming = 0;
+        iszeroreturn.IsTrue = false;
+    }
+    return iszeroreturn;
 }
 
 // ======================================
@@ -151,44 +172,39 @@ int main(int argc, char* argv[])
   int glob_mean_trim5 = 0;
   int glob_mean_trimA = 0;
     // === added for test ===/
-    std::map<string, float> means;
+    unordered_map<string, float> means;
     int test_mean_trim0 = 0;
     int test_mean_trimF = 0;
     int test_mean_trim5 = 0;
     int test_mean_trimA = 0;
     
     
-    
-    // === For loop (i) below should be removed. However, the keys in the dictionary cannot be evaluated in the right manner that way (trimvec[i]). ===
+    // === j<256*256 === //
     int nohits = 0;
-//    for (int i=0; i<argc; i++){
-        for (int j=0; j<256*256; j++){
-            if (IsZero(matrixarray, j, argc-2)){
-                means["test_mean" + trimvec[1]] += matrixarray[1][j];
-                nohits++;
-            }
+    RetType iszeroreturn;
+    for (int j=0; j<256*256; j++){
+        iszeroreturn = IsZero(matrixarray, j, argc-2, iszeroreturn);
+        if (iszeroreturn.IsTrue){
+            means["test_mean" + to_string(iszeroreturn.naming)] += matrixarray[iszeroreturn.naming][j];
+            means = iszeroreturn.avg;
+            nohits++;
         }
-//    }
-    cout << endl << nohits << " self" << endl;
+    }
+    
+    for (int i =0; i<argc-2;i++)
+    {
+        means["test_mean" + to_string(i)] /= nohits;
+        cout << means["test_mean" + to_string(i)] << endl;
+    }
+    int targettest=0;
+    for (int i=0; i<argc-2; i++){
+        targettest += means["test_mean" + to_string(i)];
+    }
+    targettest /= (argc-2);
+    cout << targettest << endl;
 
 
     
-//
-//    for (int i=155; i<165; i++){
-//        if (IsZero(matrixarray, i, argc-2))
-//        {
-////            cout << "Test worked" << endl;
-//        }
-//        else if (IsZero(matrixarray,i,argc-2)==false)
-//        {
-//            cout << "one of the values was zero" << endl;
-//        }
-//    }
-
-
-
-    
-  // === iterating over array of matrices seems to be working.
   int nhits = 0;
   for (int i=0; i<256*256; ++i) {
     if (mean_trim0[i]>0 && mean_trimF[i]>0 && mean_trim5[i]>0 && mean_trimA[i]>0) {
@@ -203,11 +219,11 @@ int main(int argc, char* argv[])
       nhits++;
     }
   }
-    cout << endl << nhits << " original" << "\n\n";
-    
-    for (int i=0; i<argc; i++){
-        means["mean_trim"+trimvec[i]] = test_mean_trim0;
-    }
+
+
+//    for (int i=0; i<argc; i++){
+//        means["mean_trim"+trimvec[i]] = test_mean_trim0;
+//    }
     
   if (nhits==0) {
     cout << "[dim_equalisation] FAILED: Threshold scan has empty output file" << endl;
@@ -219,6 +235,11 @@ int main(int argc, char* argv[])
   glob_mean_trimA /= nhits;
   int target = (glob_mean_trim0 + glob_mean_trimF + glob_mean_trim5 + glob_mean_trimA)/4;
   
+    
+    
+    
+    
+    
   float glob_width_trim0 = 0;
   float glob_width_trimF = 0;
   float glob_width_trim5 = 0;
@@ -349,20 +370,20 @@ int main(int argc, char* argv[])
   achieved_width_F_5 = sqrt(achieved_width_F_5/(256*256-nmasked-1));
     
     
-//  cout << "[dim_equalisation] Summary" << endl;
-//  cout << "  Trim 0 distribution: " << glob_mean_trim0 << " +/- " << round(glob_width_trim0) << endl;
-//  cout << "  Trim 5 distribution: " << glob_mean_trim5 << " +/- " << round(glob_width_trim5) << endl;
-//  cout << "  Trim A distribution: " << glob_mean_trimA << " +/- " << round(glob_width_trimA) << endl;
-//  cout << "  Trim F distribution: " << glob_mean_trimF << " +/- " << round(glob_width_trimF) << endl;
-//    cout << "\n\n";
-//
-//  cout << "  Mean of widths: " << (glob_width_trim0 + glob_width_trim5 + glob_width_trimA + glob_width_trimF)/4 << endl;
-//
-//  cout << "  Equalisation Target: " << target << endl;
-//  char buffer[25];
-//  sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
-//  cout << buffer << endl;
-//  cout << "  Masked Pixels: " << nmasked << endl;
+  cout << "[dim_equalisation] Summary" << endl;
+  cout << "  Trim 0 distribution: " << glob_mean_trim0 << " +/- " << round(glob_width_trim0) << endl;
+  cout << "  Trim 5 distribution: " << glob_mean_trim5 << " +/- " << round(glob_width_trim5) << endl;
+  cout << "  Trim A distribution: " << glob_mean_trimA << " +/- " << round(glob_width_trimA) << endl;
+  cout << "  Trim F distribution: " << glob_mean_trimF << " +/- " << round(glob_width_trimF) << endl;
+    cout << "\n\n";
+
+  cout << "  Mean of widths: " << (glob_width_trim0 + glob_width_trim5 + glob_width_trimA + glob_width_trimF)/4 << endl;
+
+  cout << "  Equalisation Target: " << target << endl;
+  char buffer[25];
+  sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
+  cout << buffer << endl;
+  cout << "  Masked Pixels: " << nmasked << endl;
   
   // === Test Pulse Pattern ===
   // for completeness
