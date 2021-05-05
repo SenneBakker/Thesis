@@ -194,14 +194,13 @@ int main(int argc, char* argv[])
     for (int i =0; i<argc-2;i++)
     {
         means["test_mean" + to_string(i)] /= nohits;
-        cout << means["test_mean" + to_string(i)] << endl;
+        means["mean"+trimvec[i]] = means["test_mean" + to_string(i)] /= nohits;
     }
     int targettest=0;
     for (int i=0; i<argc-2; i++){
         targettest += means["test_mean" + to_string(i)];
     }
     targettest /= (argc-2);
-    cout << targettest << endl;
 
 
     
@@ -238,8 +237,18 @@ int main(int argc, char* argv[])
     
     
     
+    // === Same thing as for means. Create unordered map and loop over trimvec ===
+    unordered_map<string, float> widths;
+    for (int i=0; i<argc-2;i++){
+        widths["global_width_trim"+trimvec[i]] =0;
+    }
+    for (int i=0; i<256*256; i++){
+        
+    }
     
     
+    
+    // === code below has exact same if statement as with the means. Think about getting using the same struct for the widths. ===
   float glob_width_trim0 = 0;
   float glob_width_trimF = 0;
   float glob_width_trim5 = 0;
