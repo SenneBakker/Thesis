@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
     for (int i =0; i<argc-2;i++)
     {
         means["test_mean" + to_string(i)] /= nohits;
-        means["mean"+trimvec[i]] = means["test_mean" + to_string(i)] /= nohits;
+        means["mean"+trimvec[i]] = means["test_mean" + to_string(i)];
     }
     int targettest=0;
     for (int i=0; i<argc-2; i++){
