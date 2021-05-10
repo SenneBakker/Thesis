@@ -117,7 +117,6 @@ RetType IsZero(uint16_t dat[10][256*256], int iter, int count, RetType iszeroret
     return iszeroreturn;
 }
 
-//glob_width_trim0 += pow(glob_mean_trim0 - mean_trim0[i], 2);
 RetType IsZeroWidth(uint16_t dat[10][256*256], int iter, int count, RetType iszeroreturn)
 {
     for (int i=0; i<count; i++){
@@ -142,6 +141,56 @@ RetType IsZeroWidth(uint16_t dat[10][256*256], int iter, int count, RetType isze
 }
 
 
+unordered_map<string,int> TrimValues(vector<string> trimlevels, unordered_map<string,int> output, int count)
+{
+    for (int i=0; i<count; i++){
+        if (trimlevels[i]=="0") {output[trimlevels[i]]=0;}
+        else if (trimlevels[i]=="1") {output[trimlevels[i]]=1; }
+        else if (trimlevels[i]=="2") {output[trimlevels[i]]=2; }
+        else if (trimlevels[i]=="3") {output[trimlevels[i]]=3; }
+        else if (trimlevels[i]=="4") {output[trimlevels[i]]=4; }
+        else if (trimlevels[i]=="5") {output[trimlevels[i]]=5; }
+        else if (trimlevels[i]=="6") {output[trimlevels[i]]=6; }
+        else if (trimlevels[i]=="7") {output[trimlevels[i]]=7; }
+        else if (trimlevels[i]=="8") {output[trimlevels[i]]=8; }
+        else if (trimlevels[i]=="9") {output[trimlevels[i]]=9; }
+        else if (trimlevels[i]=="A" || trimlevels[i]=="a") {output[trimlevels[i]]=10;}
+        else if (trimlevels[i]=="B" || trimlevels[i]=="b") {output[trimlevels[i]]=11;}
+        else if (trimlevels[i]=="C" || trimlevels[i]=="c") {output[trimlevels[i]]=12;}
+        else if (trimlevels[i]=="D" || trimlevels[i]=="d") {output[trimlevels[i]]=13;}
+        else if (trimlevels[i]=="E" || trimlevels[i]=="e") {output[trimlevels[i]]=14;}
+        else if (trimlevels[i]=="F" || trimlevels[i]=="f") {output[trimlevels[i]]=15;}
+    }
+    return output;
+    
+}
+
+//int CalcTarget(uint16_t[10][256*256], unordered_map<string, int> trimlevels)
+//{
+//
+//
+//}
+
+
+bool Masking(uint16_t dat[10][256*256], int iter, int count){
+    int counter=0;
+    for (int i=0; i<count; i++){
+        if (dat[i][iter]>0){
+//            cout << counter;
+            counter +=1;
+        }
+    }
+    if (counter == count){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+
+
+
 
 // ======================================
 //
@@ -163,12 +212,13 @@ int main(int argc, char* argv[])
     vector<string> trimvec(10);
     for (int i=2; i<argc; i++){
         trimvec[i-2] = argv[i];
+
     }
+    unordered_map<string,int> inputlevels;
+    inputlevels = TrimValues(trimvec, inputlevels, argc-2);
     
     int dacRange = 25; // Tuneable parameter
     uint16_t matrixarray[10][256*256];
-
-    
     for (int i=0; i<argc-2; i++)
     {
         load_mean(prefix+"_Trim"+argv[i+2]+"_Noise_Mean.csv", matrixarray[i]);
@@ -225,7 +275,7 @@ int main(int argc, char* argv[])
         targettest += means["glob_mean" + to_string(i)];
     }
     targettest /= (argc-2);
-
+    cout << "test target: " << targettest << endl;
 
     
   int nhits = 0;
@@ -293,9 +343,9 @@ int main(int argc, char* argv[])
         iszeroreturn.avg_width["glob_width"+to_string(i)] = sqrt(iszeroreturn.avg_width["glob_width"+to_string(i)] / (nohits-1));
     }
     
-    for (int i=0; i<argc-2; i++){
-        cout << iszeroreturn.avg_width["glob_width"+to_string(i)] << endl;
-    }
+//    for (int i=0; i<argc-2; i++){
+//        cout << iszeroreturn.avg_width["glob_width"+to_string(i)] << endl;
+//    }
     
   glob_width_trim0 = sqrt(glob_width_trim0/(nhits-1));
   glob_width_trimF = sqrt(glob_width_trimF/(nhits-1));
@@ -303,6 +353,20 @@ int main(int argc, char* argv[])
   glob_width_trimA = sqrt((glob_width_trimA)/(nhits-1));
 
   
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+  // === Finished up until here ===
   // === Calculate optimal trim ===
   string name_mask = prefix + "_Matrix_Mask.csv";
   FILE *file_mask = fopen(name_mask.c_str(), "w");
@@ -317,7 +381,26 @@ int main(int argc, char* argv[])
   string name_0pred = prefix + "_TrimBest_Noise_Predict_0_5.csv";
   FILE *file_0pred = fopen(name_0pred.c_str(), "w");
     
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
   
+    unordered_map<string, float> Trim_scales;
+    unordered_map<string, int> Trims;
+//    uint16_t predicting [10][256*256];
+    unordered_map<string, int> difference;
+    unordered_map<string, int> achieved_means;
+    unordered_map<string, float> achieved_widths;
+          
   float trim_scale;
   float trim_scale_F_5;
   float trim_scale_0_5;
@@ -338,11 +421,27 @@ int main(int argc, char* argv[])
   float achieved_width = 0;
   float achieved_width_F_5 = 0;
   float achieved_width_0_5 = 0;
+//    int count_below=0;
+//    int count_over=0;
   
   for (int i=0; i<256*256; ++i) {
     trim_scale = 1.*(mean_trimF[i] - mean_trim0[i])/16;
     trim = round((target - mean_trim0[i])/trim_scale);
-    // === Added april 21th ===
+      
+// // === counting number of trimscales below and over certain points
+//      if (trim_scale>18.4)
+//      {
+//          count_over++;
+//
+//      }
+//      if (trim_scale<11){
+//          count_below++;
+//      }
+//      if (i==256*256-1){
+//          cout << "below: " << count_below <<endl << "over: " << count_over << endl;
+//      }
+      
+      // === Added april 21th ===
     trim_scale_F_5 = 1.*(mean_trimF[i] - mean_trim5[i])/16;
     trim_F_5 = round((target - mean_trim5[i])/trim_scale_F_5);
     // === Added april 22nd ===
@@ -360,7 +459,11 @@ int main(int argc, char* argv[])
     diff_F_5 = fabs(predict_F_5[i] - target);
     diff_0_5 = fabs(predict_0_5[i] - target);
       
-    // === Should be different since trim 5 is added. ===
+//      if (!Masking(matrixarray, i, argc-2)) {
+//          cout << "false" << endl;
+//      }
+
+      
     if (mean_trim0[i]==0 || mean_trimF[i]==0 || trim>15 || trim<0 || diff>dacRange || mean_trim5[i]==0 || mean_trimA[i]==0 || diff_0_5>dacRange || diff_F_5>dacRange) {
       if (mean_trim0[i]==0 && mean_trimF[i]==0 && mean_trim5[i]==0 && mean_trimA[i] ==0) mask = 1;
       else if (mean_trim0[i]==0) mask = 2;
