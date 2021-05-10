@@ -86,7 +86,7 @@ struct RetType{
     int naming = 0;
     bool IsTrue;
     unordered_map<string, float> avg;
-   
+    unordered_map<string, float> avg_width;
 };
 
 
@@ -96,22 +96,18 @@ RetType IsZero(uint16_t dat[10][256*256], int iter, int count, RetType iszeroret
         iszeroreturn.naming = i;
         if (dat[i][iter]>0)
         {
-            iszeroreturn.avg["test_mean" + to_string(i)] += dat[i][iter];
+            iszeroreturn.avg["glob_mean" + to_string(i)] += dat[i][iter];
             iszeroreturn.counter +=1;
-
-            
         }
         else
         {
-            iszeroreturn.avg["test_mean" + to_string(i)] += dat[i][iter];
+            iszeroreturn.avg["glob_mean" + to_string(i)] += dat[i][iter];
         }
         }
-    
     if (iszeroreturn.counter == count){
         iszeroreturn.counter = 0;
         iszeroreturn.naming = 0;
         iszeroreturn.IsTrue = true;
-
     }
     else if (iszeroreturn.counter != count){
         iszeroreturn.counter = 0;
@@ -120,6 +116,32 @@ RetType IsZero(uint16_t dat[10][256*256], int iter, int count, RetType iszeroret
     }
     return iszeroreturn;
 }
+
+//glob_width_trim0 += pow(glob_mean_trim0 - mean_trim0[i], 2);
+RetType IsZeroWidth(uint16_t dat[10][256*256], int iter, int count, RetType iszeroreturn)
+{
+    for (int i=0; i<count; i++){
+        iszeroreturn.naming = i;
+        if (dat[i][iter]>0)
+        {
+            iszeroreturn.avg_width["glob_width" + to_string(i)] = iszeroreturn.avg_width["glob_width" + to_string(i)] + pow(iszeroreturn.avg["glob_mean"+to_string(i)] - dat[i][iter],2);
+            iszeroreturn.counter +=1;
+        }
+        }
+    if (iszeroreturn.counter == count){
+        iszeroreturn.counter = 0;
+        iszeroreturn.naming = 0;
+        iszeroreturn.IsTrue = true;
+    }
+    else if (iszeroreturn.counter != count){
+        iszeroreturn.counter = 0;
+        iszeroreturn.naming = 0;
+        iszeroreturn.IsTrue = false;
+    }
+    return iszeroreturn;
+}
+
+
 
 // ======================================
 //
@@ -185,20 +207,22 @@ int main(int argc, char* argv[])
     for (int j=0; j<256*256; j++){
         iszeroreturn = IsZero(matrixarray, j, argc-2, iszeroreturn);
         if (iszeroreturn.IsTrue){
-            means["test_mean" + to_string(iszeroreturn.naming)] += matrixarray[iszeroreturn.naming][j];
+//            means["test_mean" + to_string(iszeroreturn.naming)] += matrixarray[iszeroreturn.naming][j];
             means = iszeroreturn.avg;
             nohits++;
         }
     }
+
     
     for (int i =0; i<argc-2;i++)
     {
-        means["test_mean" + to_string(i)] /= nohits;
-        means["mean"+trimvec[i]] = means["test_mean" + to_string(i)];
+        means["glob_mean" + to_string(i)] /= nohits;
+        iszeroreturn.avg["glob_mean" + to_string(i)] /=nohits;
+        means["glob_mean" + trimvec[i]] = means["glob_mean" + to_string(i)];
     }
     int targettest=0;
     for (int i=0; i<argc-2; i++){
-        targettest += means["test_mean" + to_string(i)];
+        targettest += means["glob_mean" + to_string(i)];
     }
     targettest /= (argc-2);
 
@@ -220,9 +244,7 @@ int main(int argc, char* argv[])
   }
 
 
-//    for (int i=0; i<argc; i++){
-//        means["mean_trim"+trimvec[i]] = test_mean_trim0;
-//    }
+
     
   if (nhits==0) {
     cout << "[dim_equalisation] FAILED: Threshold scan has empty output file" << endl;
@@ -239,12 +261,12 @@ int main(int argc, char* argv[])
     
     // === Same thing as for means. Create unordered map and loop over trimvec ===
     unordered_map<string, float> widths;
-    for (int i=0; i<argc-2;i++){
-        widths["global_width_trim"+trimvec[i]] =0;
-    }
-    for (int i=0; i<256*256; i++){
-        
-    }
+//    for (int i=0; i<argc-2;i++){
+//        widths["global_width_trim"+trimvec[i]] =0;
+//    }
+//    for (int i=0; i<256*256; i++){
+//
+//    }
     
     
     
@@ -253,14 +275,28 @@ int main(int argc, char* argv[])
   float glob_width_trimF = 0;
   float glob_width_trim5 = 0;
   float glob_width_trimA = 0;
-  for (int i=0; i<256*256; ++i) {
-    if (mean_trim0[i]>0 && mean_trimF[i]>0 && mean_trim5[i]>0 & mean_trimA[i]>0) {
-      glob_width_trim0 += pow(glob_mean_trim0 - mean_trim0[i], 2);
-      glob_width_trimF += pow(glob_mean_trimF - mean_trimF[i], 2);
-      glob_width_trim5 += pow(glob_mean_trim5 - mean_trim5[i], 2);
-      glob_width_trimA += pow(glob_mean_trimA - mean_trimA[i], 2);
+//    RetType returnwidth;
+  for (int j=0; j<256*256; ++j) {
+      iszeroreturn = IsZeroWidth(matrixarray, j, argc-2, iszeroreturn);
+    if (iszeroreturn.IsTrue) {
+        widths = iszeroreturn.avg_width;
+
+      glob_width_trim0 += pow(glob_mean_trim0 - mean_trim0[j], 2);
+      glob_width_trimF += pow(glob_mean_trimF - mean_trimF[j], 2);
+      glob_width_trim5 += pow(glob_mean_trim5 - mean_trim5[j], 2);
+      glob_width_trimA += pow(glob_mean_trimA - mean_trimA[j], 2);
     }
   }
+    
+    
+    for (int i=0; i <argc-2; i++){
+        iszeroreturn.avg_width["glob_width"+to_string(i)] = sqrt(iszeroreturn.avg_width["glob_width"+to_string(i)] / (nohits-1));
+    }
+    
+    for (int i=0; i<argc-2; i++){
+        cout << iszeroreturn.avg_width["glob_width"+to_string(i)] << endl;
+    }
+    
   glob_width_trim0 = sqrt(glob_width_trim0/(nhits-1));
   glob_width_trimF = sqrt(glob_width_trimF/(nhits-1));
   glob_width_trim5 = sqrt(glob_width_trim5/(nhits-1));
@@ -326,7 +362,7 @@ int main(int argc, char* argv[])
       
     // === Should be different since trim 5 is added. ===
     if (mean_trim0[i]==0 || mean_trimF[i]==0 || trim>15 || trim<0 || diff>dacRange || mean_trim5[i]==0 || mean_trimA[i]==0 || diff_0_5>dacRange || diff_F_5>dacRange) {
-      if (mean_trim0[i]==0 && mean_trimF[i]==0 && mean_trim5[i]==0) mask = 1;
+      if (mean_trim0[i]==0 && mean_trimF[i]==0 && mean_trim5[i]==0 && mean_trimA[i] ==0) mask = 1;
       else if (mean_trim0[i]==0) mask = 2;
       else if (mean_trimF[i]==0) mask = 3;
       else if (trim>15 || trim<0 || trim_0_5>15 || trim_0_5<0 || trim_F_5>15 || trim_F_5<0) mask = 4;
@@ -385,6 +421,10 @@ int main(int argc, char* argv[])
   cout << "  Trim A distribution: " << glob_mean_trimA << " +/- " << round(glob_width_trimA) << endl;
   cout << "  Trim F distribution: " << glob_mean_trimF << " +/- " << round(glob_width_trimF) << endl;
     cout << "\n\n";
+    
+//    for (int i=0; i<argc-2; i++ ){
+//        cout << "Trim" + trimvec[i] << ":   " << means["glob_mean" + trimvec[i]] << endl;
+//    }
 
   cout << "  Mean of widths: " << (glob_width_trim0 + glob_width_trim5 + glob_width_trimA + glob_width_trimF)/4 << endl;
 
