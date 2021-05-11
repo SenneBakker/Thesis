@@ -176,7 +176,6 @@ bool Masking(uint16_t dat[10][256*256], int iter, int count){
     int counter=0;
     for (int i=0; i<count; i++){
         if (dat[i][iter]>0){
-//            cout << counter;
             counter +=1;
         }
     }
