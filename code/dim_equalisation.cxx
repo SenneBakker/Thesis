@@ -256,7 +256,6 @@ int main(int argc, char* argv[])
     for (int j=0; j<256*256; j++){
         iszeroreturn = IsZero(matrixarray, j, argc-2, iszeroreturn);
         if (iszeroreturn.IsTrue){
-//            means["test_mean" + to_string(iszeroreturn.naming)] += matrixarray[iszeroreturn.naming][j];
             means = iszeroreturn.avg;
             nohits++;
         }
@@ -305,21 +304,9 @@ int main(int argc, char* argv[])
   glob_mean_trimA /= nhits;
   int target = (glob_mean_trim0 + glob_mean_trimF + glob_mean_trim5 + glob_mean_trimA)/4;
   
-    
-    
-    
-    // === Same thing as for means. Create unordered map and loop over trimvec ===
     unordered_map<string, float> widths;
-//    for (int i=0; i<argc-2;i++){
-//        widths["global_width_trim"+trimvec[i]] =0;
-//    }
-//    for (int i=0; i<256*256; i++){
-//
-//    }
+
     
-    
-    
-    // === code below has exact same if statement as with the means. Think about getting using the same struct for the widths. ===
   float glob_width_trim0 = 0;
   float glob_width_trimF = 0;
   float glob_width_trim5 = 0;
@@ -380,14 +367,6 @@ int main(int argc, char* argv[])
   string name_0pred = prefix + "_TrimBest_Noise_Predict_0_5.csv";
   FILE *file_0pred = fopen(name_0pred.c_str(), "w");
     
-        
-        
-        
-        
-        
-        
-        
-        
         
         
         
