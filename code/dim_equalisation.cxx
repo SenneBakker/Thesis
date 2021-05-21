@@ -233,9 +233,13 @@ unordered_map<string,int> TrimValues(vector<string> trimlevels, unordered_map<st
 }
 
 
-float Scale (int trim1, int trim2){
-    float ts = fabs(pow(0.02758*(trim1-trim2),3) - 0.6792*pow((trim1-trim2),2) +19.48*(trim1-trim2) +1996);
-    return ts;
+float Scale(int trim1, int trim2){
+    if (trim1 > 15 || trim1<0 || trim2 > 15 || trim2 <0){
+        cout << "[dim.equalisation.Scale]: trimlevels are out of range" << endl;
+        return 0;
+    }
+    float ts = fabs(pow(0.02758*(trim1-trim2),3) - 0.6792*pow((trim1-trim2),2) +19.48*(trim1-trim2) +1296);
+    return (ts/(fabs(trim1-trim2+1)));
 }
 
 //int CalcTarget(uint16_t[10][256*256], unordered_map<string, int> trimlevels)
@@ -249,26 +253,26 @@ float Scale (int trim1, int trim2){
 
 
 
-bool Masking(uint16_t dat[10][256*256], int iter, int count, unordered_map<string, int> diff, unordered_map<string, int> trims){
-    int counter=0;
-    int counter_diff=0;
-    int counter_trims=0;
-    for (int i=0; i<count; i++){
-        if (dat[i][iter]==0){
-            counter +=1;
-            if (counter==1)
-            {
-                return true;
-            }
-        }
-    }
-    if (counter == count){
-        return true;
-    }
-    else{
-        return false;
-    }
-}
+//bool Masking(uint16_t dat[10][256*256], int iter, int count, unordered_map<string, int> diff, unordered_map<string, int> trims){
+//    int counter=0;
+//    int counter_diff=0;
+//    int counter_trims=0;
+//    for (int i=0; i<count; i++){
+//        if (dat[i][iter]==0){
+//            counter +=1;
+//            if (counter==1)
+//            {
+//                return true;
+//            }
+//        }
+//    }
+//    if (counter == count){
+//        return true;
+//    }
+//    else{
+//        return false;
+//    }
+//}
 
 
 
@@ -378,12 +382,12 @@ int main(int argc, char* argv[])
 //        line below works, but overwrites second argument?
 //        means["glob_mean" + trimvec[i]] = means["glob_mean" + to_string(i)];
     }
-    int targettest=0;
+    int target=0;
     for (int i=0; i<argc-2; i++){
-        targettest += means["glob_mean" + to_string(i)];
+        target += means["glob_mean" + to_string(i)];
     }
-    targettest /= (argc-2);
-    cout << "test target: " << targettest << endl;
+    target /= (argc-2);
+    cout << "test target: " << target << endl;
 
     
   int nhits = 0;
@@ -412,7 +416,7 @@ int main(int argc, char* argv[])
   glob_mean_trimF /= nhits;
   glob_mean_trim5 /= nhits;
   glob_mean_trimA /= nhits;
-  int target = (glob_mean_trim0 + glob_mean_trimF + glob_mean_trim5 + glob_mean_trimA)/4;
+//  int target = (glob_mean_trim0 + glob_mean_trimF + glob_mean_trim5 + glob_mean_trimA)/4;
   
     unordered_map<string, float> widths;
 
@@ -520,8 +524,10 @@ int main(int argc, char* argv[])
   float achieved_width_F_5 = 0;
   float achieved_width_0_5 = 0;
     float trscaletry;
+    trscaletry = Scale(0,15);
+    cout << trscaletry << endl;
     
-
+// === how to convert from 2 scans to three? ===
   for (int i=0; i<256*256; ++i) {
 // === replace with 3rd degree polynomial ===
 
