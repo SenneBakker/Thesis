@@ -89,6 +89,24 @@ struct RetType{
     unordered_map<string, float> avg_width;
 };
 
+int NoOfMaskedPixels(uint16_t dat[10][256*256], int count){
+    int pixels = 0;
+    int counter = 0;
+
+    
+    for (int i=0; i<256*256; i++) {
+        for (int j=0; j<count; j++) {
+            if (dat[j][i]==0){
+                counter++;
+            }
+        }
+        if (counter==count && counter!=0){
+            pixels++;
+        }
+        counter=0;
+    }
+    return pixels;
+}
 
 bool GeneralGTZero(uint16_t dat[10][256*256], int iter, int count){
     int counter = 0;
@@ -214,6 +232,12 @@ unordered_map<string,int> TrimValues(vector<string> trimlevels, unordered_map<st
     
 }
 
+
+float Scale (int trim1, int trim2){
+    float ts = fabs(pow(0.02758*(trim1-trim2),3) - 0.6792*pow((trim1-trim2),2) +19.48*(trim1-trim2) +1996);
+    return ts;
+}
+
 //int CalcTarget(uint16_t[10][256*256], unordered_map<string, int> trimlevels)
 //{
 //
@@ -302,8 +326,14 @@ int main(int argc, char* argv[])
     {
         load_mean(prefix+"_Trim"+argv[i+2]+"_Noise_Mean.csv", matrixarray[i]);
     }
-
-  // === Load Trim 0 and Trim F Means ===
+    
+    
+    int mask_pixels_init = 0;
+    mask_pixels_init = NoOfMaskedPixels(matrixarray, argc-2);
+    cout << "number of masked pixels initially: " << mask_pixels_init << endl;
+    
+    
+    // === Load Trim 0 and Trim F Means ===
   uint16_t mean_trim0[256*256];
   load_mean(prefix + "_Trim0_Noise_Mean.csv", mean_trim0);
   uint16_t mean_trimF[256*256];
@@ -330,7 +360,6 @@ int main(int argc, char* argv[])
     int test_mean_trimA = 0;
     
     
-    // === j<256*256 === //
     int nohits = 0;
     RetType iszeroreturn;
     for (int j=0; j<256*256; j++){
@@ -346,7 +375,8 @@ int main(int argc, char* argv[])
     {
         means["glob_mean" + to_string(i)] /= nohits;
         iszeroreturn.avg["glob_mean" + to_string(i)] /=nohits;
-        means["glob_mean" + trimvec[i]] = means["glob_mean" + to_string(i)];
+//        line below works, but overwrites second argument?
+//        means["glob_mean" + trimvec[i]] = means["glob_mean" + to_string(i)];
     }
     int targettest=0;
     for (int i=0; i<argc-2; i++){
@@ -450,9 +480,11 @@ int main(int argc, char* argv[])
     unordered_map<string, float> achieved_widths;
           
     
-    // === Test to get prediction running on all inputs ===
+////     === Test to get prediction running on all inputs ===
 //    for (int i=0; i<argc-2; i++){
+//
 //        Trim_scales["trim"] =
+//
 //        Trims[trimvec[i]] = round((targettest - matrixarray[i][j])/Trim_scales[])
 //        trim_F_5 = round((target - mean_trim5[i])/trim_scale_F_5);
 //    }
@@ -487,17 +519,18 @@ int main(int argc, char* argv[])
   float achieved_width = 0;
   float achieved_width_F_5 = 0;
   float achieved_width_0_5 = 0;
-    
+    float trscaletry;
     
 
   for (int i=0; i<256*256; ++i) {
+// === replace with 3rd degree polynomial ===
+
     trim_scale = 1.*(mean_trimF[i] - mean_trim0[i])/16;
     trim = round((target - mean_trim0[i])/trim_scale);
             
       // === Added april 21th ===
     trim_scale_F_5 = 1.*(mean_trimF[i] - mean_trim5[i])/11;
     trim_F_5 = round((target - mean_trim5[i])/trim_scale_F_5);
-    cout << trim_scale_F_5 << endl;
 
       // === Added april 22nd ===
     trim_scale_0_5 = 1.*(mean_trim0[i] - mean_trim5[i])/6;
@@ -576,9 +609,10 @@ int main(int argc, char* argv[])
   cout << "  Trim F distribution: " << glob_mean_trimF << " +/- " << round(glob_width_trimF) << endl;
     cout << "\n\n";
     
-//    for (int i=0; i<argc-2; i++ ){
-//        cout << "Trim" + trimvec[i] << ":   " << round(means["glob_mean" + trimvec[i]]) << endl;
-//    }
+    for (int i=0; i<argc-2; i++ ){
+        cout << "Trim" + trimvec[i] << ":   " << round(means["glob_mean" + to_string(i)]) << endl;
+    }
+    cout << "\n\n";
 
   cout << "  Mean of widths: " << (glob_width_trim0 + glob_width_trim5 + glob_width_trimA + glob_width_trimF)/4 << endl;
 
