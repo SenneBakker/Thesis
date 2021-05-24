@@ -531,28 +531,24 @@ int main(int argc, char* argv[])
 // === how to convert from 2 scans to three? ===
     for (int i=0; i<256*256; ++i) {
         // === replace with 3rd degree polynomial ===
-
+        mask = 0;
+        
         trim_scale = 1.*(mean_trimF[i] - mean_trim0[i])/16;
         trim = round((target - mean_trim0[i])/trim_scale);
+        predict[i] = mean_trim0[i] + round(trim*trim_scale);
+        diff = fabs(predict[i] - target);
                 
           // === Added april 21th ===
         trim_scale_F_5 = 1.*(mean_trimF[i] - mean_trim5[i])/11;
         trim_F_5 = round((target - mean_trim5[i])/trim_scale_F_5);
+        predict_F_5[i] = mean_trim5[i] + round(trim_F_5*trim_scale_F_5);
+        diff_F_5 = fabs(predict_F_5[i] - target);
+
 
           // === Added april 22nd ===
         trim_scale_0_5 = 1.*(mean_trim0[i] - mean_trim5[i])/6;
         trim_0_5 = round((target - mean_trim0[i])/trim_scale_0_5);
-
-          
-        mask = 0;
-        predict[i] = mean_trim0[i] + round(trim*trim_scale);
-        cout << fabs(predict[i] - target) << endl;
-
-        predict_F_5[i] = mean_trim5[i] + round(trim_F_5*trim_scale_F_5);
         predict_0_5[i] = mean_trim0[i] + round(trim_0_5*trim_scale_0_5);
-
-        diff = fabs(predict[i] - target);
-        diff_F_5 = fabs(predict_F_5[i] - target);
         diff_0_5 = fabs(predict_0_5[i] - target);
       
       
