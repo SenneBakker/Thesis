@@ -93,7 +93,6 @@ int NoOfMaskedPixels(uint16_t dat[10][256*256], int count){
     int pixels = 0;
     int counter = 0;
 
-    
     for (int i=0; i<256*256; i++) {
         for (int j=0; j<count; j++) {
             if (dat[j][i]==0){
@@ -238,12 +237,13 @@ float Scale(int trim1, int trim2){
         cout << "[dim.equalisation.Scale]: trimlevels are out of range" << endl;
         return 0;
     }
-    float ts = fabs(pow(0.02758*(trim1-trim2),3) - 0.6792*pow((trim1-trim2),2) +19.48*(trim1-trim2) +1296);
-    return (ts/(fabs(trim1-trim2+1)));
+    float ts = fabs(0.02758*pow(trim1,3) - 0.6792*pow(trim1,2) + 19.48*trim1 + 1296 - (0.02758*pow(trim2,3) - 0.6792*pow(trim2,2) + 19.48*trim2 + 1296));
+    return (ts/(fabs(trim1-trim2)+1));
 }
 
 //int CalcTarget(uint16_t[10][256*256], unordered_map<string, int> trimlevels)
 //{
+//    int target;
 //
 //
 //}
@@ -447,29 +447,29 @@ int main(int argc, char* argv[])
 //        cout << iszeroreturn.avg_width["glob_width"+to_string(i)] << endl;
 //    }
     
-  glob_width_trim0 = sqrt(glob_width_trim0/(nhits-1));
-  glob_width_trimF = sqrt(glob_width_trimF/(nhits-1));
-  glob_width_trim5 = sqrt(glob_width_trim5/(nhits-1));
-  glob_width_trimA = sqrt((glob_width_trimA)/(nhits-1));
+    glob_width_trim0 = sqrt(glob_width_trim0/(nhits-1));
+    glob_width_trimF = sqrt(glob_width_trimF/(nhits-1));
+    glob_width_trim5 = sqrt(glob_width_trim5/(nhits-1));
+    glob_width_trimA = sqrt((glob_width_trimA)/(nhits-1));
 
-  
+
         
         
-    
-  // === Finished up until here ===
-  // === Calculate optimal trim ===
-  string name_mask = prefix + "_Matrix_Mask.csv";
-  FILE *file_mask = fopen(name_mask.c_str(), "w");
-  string name_trim = prefix + "_Matrix_Trim.csv";
-  FILE *file_trim = fopen(name_trim.c_str(), "w");
-  string name_pred = prefix + "_TrimBest_Noise_Predict.csv";
-  FILE *file_pred = fopen(name_pred.c_str(), "w");
-  // === Added april 15th ===
-  string name_lpred = prefix + "_TrimBest_Noise_Predict_F_5.csv";
-  FILE *file_lpred = fopen(name_lpred.c_str(), "w");
-  // === Added april 22nd ===
-  string name_0pred = prefix + "_TrimBest_Noise_Predict_0_5.csv";
-  FILE *file_0pred = fopen(name_0pred.c_str(), "w");
+
+    // === Finished up until here ===
+    // === Calculate optimal trim ===
+    string name_mask = prefix + "_Matrix_Mask.csv";
+    FILE *file_mask = fopen(name_mask.c_str(), "w");
+    string name_trim = prefix + "_Matrix_Trim.csv";
+    FILE *file_trim = fopen(name_trim.c_str(), "w");
+    string name_pred = prefix + "_TrimBest_Noise_Predict.csv";
+    FILE *file_pred = fopen(name_pred.c_str(), "w");
+    // === Added april 15th ===
+    string name_lpred = prefix + "_TrimBest_Noise_Predict_F_5.csv";
+    FILE *file_lpred = fopen(name_lpred.c_str(), "w");
+    // === Added april 22nd ===
+    string name_0pred = prefix + "_TrimBest_Noise_Predict_0_5.csv";
+    FILE *file_0pred = fopen(name_0pred.c_str(), "w");
     
         
         
@@ -503,117 +503,119 @@ int main(int argc, char* argv[])
     
     
     
-  float trim_scale;
-  float trim_scale_F_5;
-  float trim_scale_0_5;
-  int trim;
-  int trim_F_5;
-  int trim_0_5;
-  int mask;
-  int predict[256*256];
-  int predict_F_5[256*256];
-  int predict_0_5[256*256];
-  int diff;
-  int diff_F_5;
-  int diff_0_5;
-  long nmasked = 0;
-  int achieved_mean = 0;
-  int achieved_mean_F_5 = 0;
-  int achieved_mean_0_5 = 0;
-  float achieved_width = 0;
-  float achieved_width_F_5 = 0;
-  float achieved_width_0_5 = 0;
+    float trim_scale;
+    float trim_scale_F_5;
+    float trim_scale_0_5;
+    int trim;
+    int trim_F_5;
+    int trim_0_5;
+    int mask;
+    int predict[256*256];
+    int predict_F_5[256*256];
+    int predict_0_5[256*256];
+    int diff;
+    int diff_F_5;
+    int diff_0_5;
+    long nmasked = 0;
+    int achieved_mean = 0;
+    int achieved_mean_F_5 = 0;
+    int achieved_mean_0_5 = 0;
+    float achieved_width = 0;
+    float achieved_width_F_5 = 0;
+    float achieved_width_0_5 = 0;
     float trscaletry;
-    trscaletry = Scale(0,15);
-    cout << trscaletry << endl;
+
+//    trscaletry = Scale(14,15);
+//    cout << trscaletry << endl;
     
 // === how to convert from 2 scans to three? ===
-  for (int i=0; i<256*256; ++i) {
-// === replace with 3rd degree polynomial ===
+    for (int i=0; i<256*256; ++i) {
+        // === replace with 3rd degree polynomial ===
 
-    trim_scale = 1.*(mean_trimF[i] - mean_trim0[i])/16;
-    trim = round((target - mean_trim0[i])/trim_scale);
-            
-      // === Added april 21th ===
-    trim_scale_F_5 = 1.*(mean_trimF[i] - mean_trim5[i])/11;
-    trim_F_5 = round((target - mean_trim5[i])/trim_scale_F_5);
+        trim_scale = 1.*(mean_trimF[i] - mean_trim0[i])/16;
+        trim = round((target - mean_trim0[i])/trim_scale);
+                
+          // === Added april 21th ===
+        trim_scale_F_5 = 1.*(mean_trimF[i] - mean_trim5[i])/11;
+        trim_F_5 = round((target - mean_trim5[i])/trim_scale_F_5);
 
-      // === Added april 22nd ===
-    trim_scale_0_5 = 1.*(mean_trim0[i] - mean_trim5[i])/6;
-    trim_0_5 = round((target - mean_trim0[i])/trim_scale_0_5);
+          // === Added april 22nd ===
+        trim_scale_0_5 = 1.*(mean_trim0[i] - mean_trim5[i])/6;
+        trim_0_5 = round((target - mean_trim0[i])/trim_scale_0_5);
 
-      
-    mask = 0;
-    predict[i] = mean_trim0[i] + round(trim*trim_scale);
-    
-    predict_F_5[i] = mean_trim5[i] + round(trim_F_5*trim_scale_F_5);
-    predict_0_5[i] = mean_trim0[i] + round(trim_0_5*trim_scale_0_5);
+          
+        mask = 0;
+        predict[i] = mean_trim0[i] + round(trim*trim_scale);
+        cout << fabs(predict[i] - target) << endl;
 
-    diff = fabs(predict[i] - target);
-    diff_F_5 = fabs(predict_F_5[i] - target);
-    diff_0_5 = fabs(predict_0_5[i] - target);
+        predict_F_5[i] = mean_trim5[i] + round(trim_F_5*trim_scale_F_5);
+        predict_0_5[i] = mean_trim0[i] + round(trim_0_5*trim_scale_0_5);
+
+        diff = fabs(predict[i] - target);
+        diff_F_5 = fabs(predict_F_5[i] - target);
+        diff_0_5 = fabs(predict_0_5[i] - target);
       
       
     if (mean_trim0[i]==0 || mean_trimF[i]==0 || trim>15 || trim<0 || diff>dacRange || mean_trim5[i]==0 || mean_trimA[i]==0 || diff_0_5>dacRange || diff_F_5>dacRange) {
-      if (mean_trim0[i]==0 && mean_trimF[i]==0 && mean_trim5[i]==0 && mean_trimA[i] ==0) mask = 1;
-      else if (mean_trim0[i]==0) mask = 2;
-      else if (mean_trimF[i]==0) mask = 3;
-      else if (trim>15 || trim<0 || trim_0_5>15 || trim_0_5<0 || trim_F_5>15 || trim_F_5<0) mask = 4;
-      else if (diff>dacRange) mask = 5;
-      else if (diff_0_5>dacRange) mask = 5;
-      else if (diff_F_5>dacRange) mask = 5;
-      else if (mean_trim5[i]==0) mask = 6;
-      else if (mean_trimA[i]==0) mask = 7;
-      else mask = 8; // Should not happen
+        if (mean_trim0[i]==0 && mean_trimF[i]==0 && mean_trim5[i]==0 && mean_trimA[i] ==0) mask = 1;
+        else if (mean_trim0[i]==0) mask = 2;
+        else if (mean_trimF[i]==0) mask = 3;
+        else if (trim>15 || trim<0 || trim_0_5>15 || trim_0_5<0 || trim_F_5>15 || trim_F_5<0) mask = 4;
+        else if (diff>dacRange) mask = 5;
+        else if (diff_0_5>dacRange) mask = 5;
+        else if (diff_F_5>dacRange) mask = 5;
+        else if (mean_trim5[i]==0) mask = 6;
+        else if (mean_trimA[i]==0) mask = 7;
+        else mask = 8; // Should not happen
 
-      trim = 0;
-      predict[i] = 0;
-      nmasked++;
-    } else {
-      achieved_mean += predict[i];
-      achieved_mean_F_5 += predict_F_5[i];
-      achieved_width_0_5 += predict_0_5[i];
-    }
-    // Save results
-    if (i%256==255) {
-      fprintf(file_mask, "%d\n", mask);
-      fprintf(file_trim, "%d\n", trim);
-      fprintf(file_pred, "%04d\n", predict[i]);
-      fprintf(file_lpred, "%04d\n", predict_F_5[i]);
-      fprintf(file_0pred, "%04d\n", predict_0_5[i]);
-    } else {
-      fprintf(file_mask, "%d,", mask);
-      fprintf(file_trim, "%d,", trim);
-      fprintf(file_pred, "%04d, ", predict[i]);
-      fprintf(file_lpred, "%04d, ", predict_F_5[i]);
-      fprintf(file_0pred, "%04d, ", predict_0_5[i]);
-    }
-  }
-  fclose(file_mask);
-  fclose(file_trim);
-  fclose(file_lpred);
-  fclose(file_pred);
-  fclose(file_0pred);
-  achieved_mean /= (256*256-nmasked);
-  achieved_mean_0_5 /= (256*256-nmasked);
-  achieved_mean_F_5 /= (256*256-nmasked);
+        trim = 0;
+        predict[i] = 0;
+        nmasked++;
+        } else {
+        achieved_mean += predict[i];
+        achieved_mean_F_5 += predict_F_5[i];
+        achieved_width_0_5 += predict_0_5[i];
+        }
+        // Save results
+        if (i%256==255) {
+          fprintf(file_mask, "%d\n", mask);
+          fprintf(file_trim, "%d\n", trim);
+          fprintf(file_pred, "%04d\n", predict[i]);
+          fprintf(file_lpred, "%04d\n", predict_F_5[i]);
+          fprintf(file_0pred, "%04d\n", predict_0_5[i]);
+        } else {
+          fprintf(file_mask, "%d,", mask);
+          fprintf(file_trim, "%d,", trim);
+          fprintf(file_pred, "%04d, ", predict[i]);
+          fprintf(file_lpred, "%04d, ", predict_F_5[i]);
+          fprintf(file_0pred, "%04d, ", predict_0_5[i]);
+        }
+        }
+    fclose(file_mask);
+    fclose(file_trim);
+    fclose(file_lpred);
+    fclose(file_pred);
+    fclose(file_0pred);
+    achieved_mean /= (256*256-nmasked);
+    achieved_mean_0_5 /= (256*256-nmasked);
+    achieved_mean_F_5 /= (256*256-nmasked);
   
-  for (int i=0; i<256*256; ++i) {
-    if (predict[i]>0) achieved_width += pow(predict[i] - achieved_mean, 2);
-      if (predict_0_5[i]>0) achieved_width_0_5 += pow(predict_0_5[i] - achieved_width_0_5,2);
-      if (predict_F_5[i]>0) achieved_mean_F_5 += pow(predict_F_5[i] - achieved_mean_F_5,2);
+    for (int i=0; i<256*256; ++i) {
+        if (predict[i]>0) achieved_width += pow(predict[i] - achieved_mean, 2);
+        if (predict_0_5[i]>0) achieved_width_0_5 += pow(predict_0_5[i] - achieved_width_0_5,2);
+        if (predict_F_5[i]>0) achieved_mean_F_5 += pow(predict_F_5[i] - achieved_mean_F_5,2);
   }
   achieved_width = sqrt(achieved_width/(256*256-nmasked-1));
   achieved_width_0_5 = sqrt(achieved_width_0_5/(256*256-nmasked-1));
   achieved_width_F_5 = sqrt(achieved_width_F_5/(256*256-nmasked-1));
     
     
-  cout << "[dim_equalisation] Summary" << endl;
-  cout << "  Trim 0 distribution: " << glob_mean_trim0 << " +/- " << round(glob_width_trim0) << endl;
-  cout << "  Trim 5 distribution: " << glob_mean_trim5 << " +/- " << round(glob_width_trim5) << endl;
-  cout << "  Trim A distribution: " << glob_mean_trimA << " +/- " << round(glob_width_trimA) << endl;
-  cout << "  Trim F distribution: " << glob_mean_trimF << " +/- " << round(glob_width_trimF) << endl;
-    cout << "\n\n";
+//  cout << "[dim_equalisation] Summary" << endl;
+//  cout << "  Trim 0 distribution: " << glob_mean_trim0 << " +/- " << round(glob_width_trim0) << endl;
+//  cout << "  Trim 5 distribution: " << glob_mean_trim5 << " +/- " << round(glob_width_trim5) << endl;
+//  cout << "  Trim A distribution: " << glob_mean_trimA << " +/- " << round(glob_width_trimA) << endl;
+//  cout << "  Trim F distribution: " << glob_mean_trimF << " +/- " << round(glob_width_trimF) << endl;
+//    cout << "\n\n";
     
     for (int i=0; i<argc-2; i++ ){
         cout << "Trim" + trimvec[i] << ":   " << round(means["glob_mean" + to_string(i)]) << endl;
