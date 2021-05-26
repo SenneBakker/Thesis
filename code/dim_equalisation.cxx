@@ -88,6 +88,12 @@ struct RetType{
     unordered_map<string, float> avg;
     unordered_map<string, float> avg_width;
 };
+struct MaskingType{
+    int mask=0;
+    int masked=0;
+    bool NotMasked=false;
+    
+};
 
 int NoOfMaskedPixels(uint16_t dat[10][256*256], int count){
     int pixels = 0;
@@ -107,53 +113,28 @@ int NoOfMaskedPixels(uint16_t dat[10][256*256], int count){
     return pixels;
 }
 
-bool GeneralGTZero(uint16_t dat[10][256*256], int iter, int count){
-    int counter = 0;
-    for (int i=0; i<count; i++){
-        if (dat[i][iter]>0){
-            counter +=1;
-        }
+MaskingType MaskingIsZero(uint16_t dat[10][256*256], int iter, int trim, int diff, int dac, MaskingType ret){
+    ret.mask = 0;
+    ret.NotMasked=false;
+    if (dat[0][iter]==0 || dat[1][iter]==0 || diff>dac || trim>15 || trim<0){
+        ret.masked++;
     }
-    if (counter == count){
-        return true;
+    if (dat[0][iter]==0){
+        ret.mask = 1;
     }
-    else{
-        return false;
+    if (dat[1][iter]==0){
+        ret.mask = 2;
     }
-}
-
-bool GeneralETZero(uint16_t dat[10][256*256], int iter, int count){
-    int counter=0;
-    for (int i=0; i<count; i++){
-        if (dat[i][iter]==0){
-            counter +=1;
-        }
+    if (diff>dac){
+        ret.mask=3;
     }
-    if (counter == count){
-        return true;
+    if (trim>15 || trim<0){
+        ret.mask = 4;
     }
-    else{
-        return false;
+    else {
+        ret.NotMasked = true;
     }
-}
-
-bool MaskingIsZero(uint16_t dat[10][256], int iter, int count){
-    int counter=0;
-    for (int i=0; i<count; i++){
-        if (dat[i][iter]==0){
-            counter +=1;
-            if (counter==1)
-            {
-                return true;
-            }
-        }
-    }
-    if (counter<count){
-        return true;
-    }
-    else{
-        return false;
-    }
+    return ret;
 }
 
 RetType IsZero(uint16_t dat[10][256*256], int iter, int count, RetType iszeroreturn)
@@ -206,8 +187,7 @@ RetType IsZeroWidth(uint16_t dat[10][256*256], int iter, int count, RetType isze
     return iszeroreturn;
 }
 
-
-unordered_map<string,int> TrimValues(vector<string> trimlevels, unordered_map<string,int> output, int count)
+unordered_map<string,float> TrimValues(vector<string> trimlevels, unordered_map<string,float> output, int count)
 {
     for (int i=0; i<count; i++){
         if (trimlevels[i]=="0") {output[trimlevels[i]]=0;}
@@ -231,71 +211,19 @@ unordered_map<string,int> TrimValues(vector<string> trimlevels, unordered_map<st
     
 }
 
-
-float Scale(int trim1, int trim2){
-    if (trim1 > 15 || trim1<0 || trim2 > 15 || trim2 <0){
-        cout << "[dim.equalisation.Scale]: trimlevels are out of range" << endl;
-        return 0;
+float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, unordered_map<string, float> avg, int count){
+    float trimscale=0;
+    for (int i=0; i<count; i++){
+        trimscale += pow(-1,i)*avg["glob_mean"+to_string(i)];
     }
-    float ts = fabs(0.02758*pow(trim1,3) - 0.6792*pow(trim1,2) + 19.48*trim1 + 1296 - (0.02758*pow(trim2,3) - 0.6792*pow(trim2,2) + 19.48*trim2 + 1296));
-    return (ts/(fabs(trim1-trim2)+1));
+    trimscale = fabs(trimscale)/ (fabs(levels[trimvec[0]]-levels[trimvec[1]])+1);
+    return trimscale;
 }
 
-//int CalcTarget(uint16_t[10][256*256], unordered_map<string, int> trimlevels)
-//{
-//    int target;
-//
-//
-//}
-
-
-
-
-
-
-//bool Masking(uint16_t dat[10][256*256], int iter, int count, unordered_map<string, int> diff, unordered_map<string, int> trims){
-//    int counter=0;
-//    int counter_diff=0;
-//    int counter_trims=0;
-//    for (int i=0; i<count; i++){
-//        if (dat[i][iter]==0){
-//            counter +=1;
-//            if (counter==1)
-//            {
-//                return true;
-//            }
-//        }
-//    }
-//    if (counter == count){
-//        return true;
-//    }
-//    else{
-//        return false;
-//    }
-//}
-
-
-
-
-//  unordered_map<string, float> Trim_scales;
-//  unordered_map<string, int> Trims;
-//  uint16_t predicting [10][256*256];
-//  unordered_map<string, int> difference;
-//  unordered_map<string, int> achieved_means;
-//  unordered_map<string, float> achieved_widths;
-
-//if (mean_trim0[i]==0 || mean_trimF[i]==0 || trim>15 || trim<0 || diff>dacRange || mean_trim5[i]==0 || mean_trimA[i]==0 || diff_0_5>dacRange || diff_F_5>dacRange) {
-//  if (mean_trim0[i]==0 && mean_trimF[i]==0 && mean_trim5[i]==0 && mean_trimA[i] ==0) mask = 1;
-//  else if (mean_trim0[i]==0) mask = 2;
-//  else if (mean_trimF[i]==0) mask = 3;
-//  else if (trim>15 || trim<0 || trim_0_5>15 || trim_0_5<0 || trim_F_5>15 || trim_F_5<0) mask = 4;
-//  else if (diff>dacRange) mask = 5;
-//  else if (diff_0_5>dacRange) mask = 5;
-//  else if (diff_F_5>dacRange) mask = 5;
-//  else if (mean_trim5[i]==0) mask = 6;
-//  else if (mean_trimA[i]==0) mask = 7;
-//  else mask = 8; // Should not happen
-
+int CalculateTarget(){
+    int target = 0;
+    
+}
 
 
 
@@ -319,13 +247,13 @@ int main(int argc, char* argv[])
     vector<string> trimvec(10);
     for (int i=2; i<argc; i++){
         trimvec[i-2] = argv[i];
-
     }
-    unordered_map<string,int> inputlevels;
+    unordered_map<string,float> inputlevels;
     inputlevels = TrimValues(trimvec, inputlevels, argc-2);
     
     int dacRange = 25; // Tuneable parameter
     uint16_t matrixarray[10][256*256];
+    // === load means ===
     for (int i=0; i<argc-2; i++)
     {
         load_mean(prefix+"_Trim"+argv[i+2]+"_Noise_Mean.csv", matrixarray[i]);
@@ -334,36 +262,13 @@ int main(int argc, char* argv[])
     
     int mask_pixels_init = 0;
     mask_pixels_init = NoOfMaskedPixels(matrixarray, argc-2);
-    cout << "number of masked pixels initially: " << mask_pixels_init << endl;
-    
-    
-    // === Load Trim 0 and Trim F Means ===
-  uint16_t mean_trim0[256*256];
-  load_mean(prefix + "_Trim0_Noise_Mean.csv", mean_trim0);
-  uint16_t mean_trimF[256*256];
-  load_mean(prefix + "_TrimF_Noise_Mean.csv", mean_trimF);
-  uint16_t mean_trim5[256*256];
-  load_mean(prefix + "_Trim5_Noise_Mean.csv", mean_trim5);
-  uint16_t mean_trimA[256*256];
-  load_mean(prefix + "_TrimA_Noise_Mean.csv", mean_trimA);
-    
+    cout << "  Number of masked pixels initially: " << mask_pixels_init << endl;
 
-
+    // === Calculate Target ===
+    cout << "  [dim_equalisation] Equalising" << endl;
     
-  // === Calculate Target ===
-  cout << "[dim_equalisation] Equalising" << endl;
-  int glob_mean_trim0 = 0;
-  int glob_mean_trimF = 0;
-  int glob_mean_trim5 = 0;
-  int glob_mean_trimA = 0;
-    // === added for test ===/
     unordered_map<string, float> means;
-    int test_mean_trim0 = 0;
-    int test_mean_trimF = 0;
-    int test_mean_trim5 = 0;
-    int test_mean_trimA = 0;
-    
-    
+    // === calculate averages
     int nohits = 0;
     RetType iszeroreturn;
     for (int j=0; j<256*256; j++){
@@ -379,84 +284,34 @@ int main(int argc, char* argv[])
     {
         means["glob_mean" + to_string(i)] /= nohits;
         iszeroreturn.avg["glob_mean" + to_string(i)] /=nohits;
-//        line below works, but overwrites second argument?
-//        means["glob_mean" + trimvec[i]] = means["glob_mean" + to_string(i)];
+
     }
+    
     int target=0;
     for (int i=0; i<argc-2; i++){
         target += means["glob_mean" + to_string(i)];
     }
     target /= (argc-2);
-    cout << "test target: " << target << endl;
-
     
-  int nhits = 0;
-  for (int i=0; i<256*256; ++i) {
-    if (mean_trim0[i]>0 && mean_trimF[i]>0 && mean_trim5[i]>0 && mean_trimA[i]>0) {
-      glob_mean_trim0 += mean_trim0[i];
-      glob_mean_trimF += mean_trimF[i];
-      glob_mean_trim5 += mean_trim5[i];
-      glob_mean_trimA += mean_trimA[i];
-        test_mean_trim0 += matrixarray[0][i];
-        test_mean_trim5 += matrixarray[1][i];
-        test_mean_trimA += matrixarray[2][i];
-        test_mean_trimF += matrixarray[3][i];
-      nhits++;
+    
+    if (nohits==0) {
+        cout << "[dim_equalisation] FAILED: Threshold scan has empty output file" << endl;
+        return 0;
     }
-  }
 
-
-
-    
-  if (nhits==0) {
-    cout << "[dim_equalisation] FAILED: Threshold scan has empty output file" << endl;
-    return 0;
-  }
-  glob_mean_trim0 /= nhits;
-  glob_mean_trimF /= nhits;
-  glob_mean_trim5 /= nhits;
-  glob_mean_trimA /= nhits;
-//  int target = (glob_mean_trim0 + glob_mean_trimF + glob_mean_trim5 + glob_mean_trimA)/4;
   
     unordered_map<string, float> widths;
-
-    
-  float glob_width_trim0 = 0;
-  float glob_width_trimF = 0;
-  float glob_width_trim5 = 0;
-  float glob_width_trimA = 0;
-//    RetType returnwidth;
-  for (int j=0; j<256*256; ++j) {
-      iszeroreturn = IsZeroWidth(matrixarray, j, argc-2, iszeroreturn);
-    if (iszeroreturn.IsTrue) {
-        widths = iszeroreturn.avg_width;
-
-      glob_width_trim0 += pow(glob_mean_trim0 - mean_trim0[j], 2);
-      glob_width_trimF += pow(glob_mean_trimF - mean_trimF[j], 2);
-      glob_width_trim5 += pow(glob_mean_trim5 - mean_trim5[j], 2);
-      glob_width_trimA += pow(glob_mean_trimA - mean_trimA[j], 2);
-    }
-  }
-    
-    
+    for (int j=0; j<256*256; ++j) {
+        iszeroreturn = IsZeroWidth(matrixarray, j, argc-2, iszeroreturn);
+        if (iszeroreturn.IsTrue) {
+            widths = iszeroreturn.avg_width;
+        }
+      }
     for (int i=0; i <argc-2; i++){
         iszeroreturn.avg_width["glob_width"+to_string(i)] = sqrt(iszeroreturn.avg_width["glob_width"+to_string(i)] / (nohits-1));
     }
-    
-//    for (int i=0; i<argc-2; i++){
-//        cout << iszeroreturn.avg_width["glob_width"+to_string(i)] << endl;
-//    }
-    
-    glob_width_trim0 = sqrt(glob_width_trim0/(nhits-1));
-    glob_width_trimF = sqrt(glob_width_trimF/(nhits-1));
-    glob_width_trim5 = sqrt(glob_width_trim5/(nhits-1));
-    glob_width_trimA = sqrt((glob_width_trimA)/(nhits-1));
+    widths = iszeroreturn.avg_width;
 
-
-        
-        
-
-    // === Finished up until here ===
     // === Calculate optimal trim ===
     string name_mask = prefix + "_Matrix_Mask.csv";
     FILE *file_mask = fopen(name_mask.c_str(), "w");
@@ -464,168 +319,82 @@ int main(int argc, char* argv[])
     FILE *file_trim = fopen(name_trim.c_str(), "w");
     string name_pred = prefix + "_TrimBest_Noise_Predict.csv";
     FILE *file_pred = fopen(name_pred.c_str(), "w");
-    // === Added april 15th ===
-    string name_lpred = prefix + "_TrimBest_Noise_Predict_F_5.csv";
-    FILE *file_lpred = fopen(name_lpred.c_str(), "w");
-    // === Added april 22nd ===
-    string name_0pred = prefix + "_TrimBest_Noise_Predict_0_5.csv";
-    FILE *file_0pred = fopen(name_0pred.c_str(), "w");
-    
-        
-        
-        
-        
-  
-    unordered_map<string, float> Trim_scales;
-    unordered_map<string, int> Trims;
-//    uint16_t predicting [10][256*256];
-    unordered_map<string, int> difference;
-    unordered_map<string, int> achieved_means;
-    unordered_map<string, float> achieved_widths;
-          
-    
-////     === Test to get prediction running on all inputs ===
-//    for (int i=0; i<argc-2; i++){
-//
-//        Trim_scales["trim"] =
-//
-//        Trims[trimvec[i]] = round((targettest - matrixarray[i][j])/Trim_scales[])
-//        trim_F_5 = round((target - mean_trim5[i])/trim_scale_F_5);
-//    }
-//
-//
-//    for (int j=0; j<256*256; j++){
-//
-//
-//    }
-    
-    
-    
     
     
     float trim_scale;
-    float trim_scale_F_5;
-    float trim_scale_0_5;
     int trim;
-    int trim_F_5;
-    int trim_0_5;
     int mask;
     int predict[256*256];
-    int predict_F_5[256*256];
-    int predict_0_5[256*256];
+    vector<int> Trims;
+    float mean_widths = 0;
     int diff;
-    int diff_F_5;
-    int diff_0_5;
     long nmasked = 0;
     int achieved_mean = 0;
-    int achieved_mean_F_5 = 0;
-    int achieved_mean_0_5 = 0;
     float achieved_width = 0;
-    float achieved_width_F_5 = 0;
-    float achieved_width_0_5 = 0;
-    float trscaletry;
+    MaskingType masking;
 
-//    trscaletry = Scale(14,15);
-//    cout << trscaletry << endl;
+
     
 // === how to convert from 2 scans to three? ===
     for (int i=0; i<256*256; ++i) {
-        // === replace with 3rd degree polynomial ===
         mask = 0;
-        
-        trim_scale = 1.*(mean_trimF[i] - mean_trim0[i])/16;
-        trim = round((target - mean_trim0[i])/trim_scale);
-        predict[i] = mean_trim0[i] + round(trim*trim_scale);
+        trim_scale = Scale2Trims(inputlevels, trimvec, iszeroreturn.avg, argc-2);
+        trim = round((target - matrixarray[0][i])/trim_scale);
+        predict[i] = matrixarray[0][i] + round(trim*trim_scale);
         diff = fabs(predict[i] - target);
-                
-          // === Added april 21th ===
-        trim_scale_F_5 = 1.*(mean_trimF[i] - mean_trim5[i])/11;
-        trim_F_5 = round((target - mean_trim5[i])/trim_scale_F_5);
-        predict_F_5[i] = mean_trim5[i] + round(trim_F_5*trim_scale_F_5);
-        diff_F_5 = fabs(predict_F_5[i] - target);
+        
+        // === determine which pixels to mask
+        masking = MaskingIsZero(matrixarray, i, trim, diff, dacRange, masking);
+        mask = masking.mask;
+        nmasked = masking.masked;
 
-
-          // === Added april 22nd ===
-        trim_scale_0_5 = 1.*(mean_trim0[i] - mean_trim5[i])/6;
-        trim_0_5 = round((target - mean_trim0[i])/trim_scale_0_5);
-        predict_0_5[i] = mean_trim0[i] + round(trim_0_5*trim_scale_0_5);
-        diff_0_5 = fabs(predict_0_5[i] - target);
-      
-      
-    if (mean_trim0[i]==0 || mean_trimF[i]==0 || trim>15 || trim<0 || diff>dacRange || mean_trim5[i]==0 || mean_trimA[i]==0 || diff_0_5>dacRange || diff_F_5>dacRange) {
-        if (mean_trim0[i]==0 && mean_trimF[i]==0 && mean_trim5[i]==0 && mean_trimA[i] ==0) mask = 1;
-        else if (mean_trim0[i]==0) mask = 2;
-        else if (mean_trimF[i]==0) mask = 3;
-        else if (trim>15 || trim<0 || trim_0_5>15 || trim_0_5<0 || trim_F_5>15 || trim_F_5<0) mask = 4;
-        else if (diff>dacRange) mask = 5;
-        else if (diff_0_5>dacRange) mask = 5;
-        else if (diff_F_5>dacRange) mask = 5;
-        else if (mean_trim5[i]==0) mask = 6;
-        else if (mean_trimA[i]==0) mask = 7;
-        else mask = 8; // Should not happen
-
-        trim = 0;
-        predict[i] = 0;
-        nmasked++;
-        } else {
-        achieved_mean += predict[i];
-        achieved_mean_F_5 += predict_F_5[i];
-        achieved_width_0_5 += predict_0_5[i];
+        if (masking.NotMasked){
+            achieved_mean+=predict[i];
         }
         // Save results
         if (i%256==255) {
           fprintf(file_mask, "%d\n", mask);
           fprintf(file_trim, "%d\n", trim);
           fprintf(file_pred, "%04d\n", predict[i]);
-          fprintf(file_lpred, "%04d\n", predict_F_5[i]);
-          fprintf(file_0pred, "%04d\n", predict_0_5[i]);
         } else {
           fprintf(file_mask, "%d,", mask);
           fprintf(file_trim, "%d,", trim);
           fprintf(file_pred, "%04d, ", predict[i]);
-          fprintf(file_lpred, "%04d, ", predict_F_5[i]);
-          fprintf(file_0pred, "%04d, ", predict_0_5[i]);
+
         }
-        }
+    }
+    achieved_mean /= (256*256-nmasked);
     fclose(file_mask);
     fclose(file_trim);
-    fclose(file_lpred);
     fclose(file_pred);
-    fclose(file_0pred);
-    achieved_mean /= (256*256-nmasked);
-    achieved_mean_0_5 /= (256*256-nmasked);
-    achieved_mean_F_5 /= (256*256-nmasked);
-  
+    
+    
     for (int i=0; i<256*256; ++i) {
         if (predict[i]>0) achieved_width += pow(predict[i] - achieved_mean, 2);
-        if (predict_0_5[i]>0) achieved_width_0_5 += pow(predict_0_5[i] - achieved_width_0_5,2);
-        if (predict_F_5[i]>0) achieved_mean_F_5 += pow(predict_F_5[i] - achieved_mean_F_5,2);
-  }
-  achieved_width = sqrt(achieved_width/(256*256-nmasked-1));
-  achieved_width_0_5 = sqrt(achieved_width_0_5/(256*256-nmasked-1));
-  achieved_width_F_5 = sqrt(achieved_width_F_5/(256*256-nmasked-1));
-    
-    
-//  cout << "[dim_equalisation] Summary" << endl;
-//  cout << "  Trim 0 distribution: " << glob_mean_trim0 << " +/- " << round(glob_width_trim0) << endl;
-//  cout << "  Trim 5 distribution: " << glob_mean_trim5 << " +/- " << round(glob_width_trim5) << endl;
-//  cout << "  Trim A distribution: " << glob_mean_trimA << " +/- " << round(glob_width_trimA) << endl;
-//  cout << "  Trim F distribution: " << glob_mean_trimF << " +/- " << round(glob_width_trimF) << endl;
-//    cout << "\n\n";
-    
+    }
+    achieved_width = sqrt(achieved_width/(256*256-nmasked-1));
+
     for (int i=0; i<argc-2; i++ ){
-        cout << "Trim" + trimvec[i] << ":   " << round(means["glob_mean" + to_string(i)]) << endl;
+        cout << "  Trim" + trimvec[i] << " distribution:   " << round(means["glob_mean" + to_string(i)]) << " +/- " << round(widths["glob_width"+to_string(i)]) << endl;
     }
     cout << "\n\n";
 
-  cout << "  Mean of widths: " << (glob_width_trim0 + glob_width_trim5 + glob_width_trimA + glob_width_trimF)/4 << endl;
-
-  cout << "  Equalisation Target: " << target << endl;
-  char buffer[25];
-  sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
-  cout << buffer << endl;
-  cout << "  Masked Pixels: " << nmasked << endl;
-  
+    for (int i=0;i<argc-2;i++){
+        mean_widths += widths["glob_width"+to_string(i)]/(argc-2);
+    }
+    
+    char mean_w[24]; // dummy size, you should take care of the size!
+    sprintf(mean_w, "%.2f", mean_widths);
+    
+    
+    cout << "  Mean of widths: " << mean_w << endl;
+    cout << "  Equalisation Target: " << target << endl;
+    char buffer[25];
+    sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
+    cout << buffer << endl;
+    cout << "  Masked Pixels: " << nmasked << endl;
+    
+    
   // === Test Pulse Pattern ===
   // for completeness
   string name_tp = prefix + "_Matrix_TP.csv";
