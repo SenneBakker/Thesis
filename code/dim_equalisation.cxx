@@ -220,10 +220,12 @@ float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, un
     return trimscale;
 }
 
-int CalculateTarget(){
-    int target = 0;
-    
-}
+//int CalculateTarget(unordered_map<string, int> means, vector<string> trimvec, unordered_map<string, float> levels){
+//    int target = 0;
+//
+//
+//
+//}
 
 
 
@@ -347,7 +349,7 @@ int main(int argc, char* argv[])
         masking = MaskingIsZero(matrixarray, i, trim, diff, dacRange, masking);
         mask = masking.mask;
         nmasked = masking.masked;
-
+        
         if (masking.NotMasked){
             achieved_mean+=predict[i];
         }
