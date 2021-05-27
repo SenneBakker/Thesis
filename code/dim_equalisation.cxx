@@ -143,14 +143,14 @@ RetType IsZero(uint16_t dat[10][256*256], int iter, int count, RetType iszeroret
         iszeroreturn.naming = i;
         if (dat[i][iter]>0)
         {
-            iszeroreturn.avg["glob_mean" + to_string(i)] += dat[i][iter];
             iszeroreturn.counter +=1;
         }
-        else
-        {
-            iszeroreturn.avg["glob_mean" + to_string(i)] += dat[i][iter];
+        if (iszeroreturn.counter == count){
+            for (int j=0; j<count; j++){
+            iszeroreturn.avg["glob_mean"+to_string(j)] += dat[j][iter];
+            }
         }
-        }
+    }
     if (iszeroreturn.counter == count){
         iszeroreturn.counter = 0;
         iszeroreturn.naming = 0;
@@ -163,17 +163,22 @@ RetType IsZero(uint16_t dat[10][256*256], int iter, int count, RetType iszeroret
     }
     return iszeroreturn;
 }
-
+    
+    
 RetType IsZeroWidth(uint16_t dat[10][256*256], int iter, int count, RetType iszeroreturn)
 {
     for (int i=0; i<count; i++){
         iszeroreturn.naming = i;
         if (dat[i][iter]>0)
         {
-            iszeroreturn.avg_width["glob_width" + to_string(i)] = iszeroreturn.avg_width["glob_width" + to_string(i)] + pow(iszeroreturn.avg["glob_mean"+to_string(i)] - dat[i][iter],2);
             iszeroreturn.counter +=1;
         }
+        if (iszeroreturn.counter == count){
+            for (int j=0; j<count; j++){
+                iszeroreturn.avg_width["glob_width" + to_string(j)] = iszeroreturn.avg_width["glob_width" + to_string(j)] + pow(iszeroreturn.avg["glob_mean"+to_string(j)] - dat[j][iter],2);
+            }
         }
+    }
     if (iszeroreturn.counter == count){
         iszeroreturn.counter = 0;
         iszeroreturn.naming = 0;
@@ -211,10 +216,10 @@ unordered_map<string,float> TrimValues(vector<string> trimlevels, unordered_map<
     
 }
 
-float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, unordered_map<string, float> avg, int count){
+float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, int iter, uint16_t dat[10][256*256], int count){
     float trimscale=0;
     for (int i=0; i<count; i++){
-        trimscale += pow(-1,i)*avg["glob_mean"+to_string(i)];
+        trimscale += pow(-1,i)*dat[i][iter];
     }
     trimscale = fabs(trimscale)/ (fabs(levels[trimvec[0]]-levels[trimvec[1]])+1);
     return trimscale;
@@ -332,6 +337,7 @@ int main(int argc, char* argv[])
     }
     widths = iszeroreturn.avg_width;
 
+
     // === Calculate optimal trim ===
     string name_mask = prefix + "_Matrix_Mask.csv";
     FILE *file_mask = fopen(name_mask.c_str(), "w");
@@ -358,7 +364,7 @@ int main(int argc, char* argv[])
 // === how to convert from 2 scans to three? ===
     for (int i=0; i<256*256; ++i) {
         mask = 0;
-        trim_scale = Scale2Trims(inputlevels, trimvec, iszeroreturn.avg, argc-2);
+        trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2);
         trim = round((target - matrixarray[0][i])/trim_scale);
         predict[i] = matrixarray[0][i] + round(trim*trim_scale);
         diff = fabs(predict[i] - target);
