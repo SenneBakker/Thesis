@@ -164,7 +164,7 @@ RetType IsZero(uint16_t dat[10][256*256], int iter, int count, RetType iszeroret
     return iszeroreturn;
 }
     
-    
+
 RetType IsZeroWidth(uint16_t dat[10][256*256], int iter, int count, RetType iszeroreturn)
 {
     for (int i=0; i<count; i++){
@@ -259,12 +259,14 @@ int main(int argc, char* argv[])
     inputlevels = TrimValues(trimvec, inputlevels, argc-2);
     
     int dacRange = 25; // Tuneable parameter
+    
     uint16_t matrixarray[10][256*256];
     // === load means ===
     for (int i=0; i<argc-2; i++)
     {
         load_mean(prefix+"_Trim"+argv[i+2]+"_Noise_Mean.csv", matrixarray[i]);
     }
+    
 //    === Hard coding the 0 trim for target ===
     load_mean(prefix+"_Trim0_Noise_Mean.csv", matrixarray[2]);
     
@@ -310,15 +312,12 @@ int main(int argc, char* argv[])
 //    cout << argv[3] << endl;
     
     
-    
 ////    === hard coded target ===
     int target = 0;
     target = (means["glob_mean2"] + means["glob_mean"+to_string(1)])/2;
     
     
-    
-    
-    
+
     if (nohits==0) {
         cout << "[dim_equalisation] FAILED: Threshold scan has empty output file" << endl;
         return 0;
@@ -361,7 +360,6 @@ int main(int argc, char* argv[])
 
 
     
-// === how to convert from 2 scans to three? ===
     for (int i=0; i<256*256; ++i) {
         mask = 0;
         trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2);
