@@ -260,7 +260,8 @@ int main(int argc, char* argv[])
     {
         load_mean(prefix+"_Trim"+argv[i+2]+"_Noise_Mean.csv", matrixarray[i]);
     }
-    
+//    === Hard coding the 0 trim for target ===
+    load_mean(prefix+"_Trim0_Noise_Mean.csv", matrixarray[2]);
     
     int mask_pixels_init = 0;
     mask_pixels_init = NoOfMaskedPixels(matrixarray, argc-2);
@@ -286,14 +287,31 @@ int main(int argc, char* argv[])
     {
         means["glob_mean" + to_string(i)] /= nohits;
         iszeroreturn.avg["glob_mean" + to_string(i)] /=nohits;
+    }
 
+    for (int i =0; i<256*256; i++){
+        means["glob_mean2"]+=matrixarray[2][i];
     }
+    means["glob_mean2"]/=nohits;
     
-    int target=0;
-    for (int i=0; i<argc-2; i++){
-        target += means["glob_mean" + to_string(i)];
-    }
-    target /= (argc-2);
+    
+    
+//    === dynamic target ====
+//    int target=0;
+//    for (int i=0; i<argc-2; i++){
+//        target += means["glob_mean" + to_string(i)];
+//    }
+//    target /= (argc-2);
+//    cout << argv[3] << endl;
+    
+    
+    
+////    === hard coded target ===
+    int target = 0;
+    target = (means["glob_mean2"] + means["glob_mean"+to_string(1)])/2;
+    
+    
+    
     
     
     if (nohits==0) {
