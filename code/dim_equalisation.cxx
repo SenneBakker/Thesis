@@ -81,10 +81,11 @@ int load_mean(string filename, uint16_t* matrix)
 }
 
 
-struct RetType{
+struct DataStructure{
     int counter = 0;
     int naming = 0;
     bool IsTrue;
+    int NoHits=0;
     unordered_map<string, float> avg;
     unordered_map<string, float> avg_width;
 };
@@ -137,7 +138,7 @@ MaskingType MaskingIsZero(uint16_t dat[10][256*256], int iter, int trim, int dif
     return ret;
 }
 
-RetType IsZero(uint16_t dat[10][256*256], int iter, int count, RetType iszeroreturn)
+DataStructure IsZero(uint16_t dat[10][256*256], int iter, int count, DataStructure iszeroreturn)
 {
     for (int i=0; i<count; i++){
         iszeroreturn.naming = i;
@@ -165,29 +166,70 @@ RetType IsZero(uint16_t dat[10][256*256], int iter, int count, RetType iszeroret
 }
     
 
-RetType IsZeroWidth(uint16_t dat[10][256*256], int iter, int count, RetType iszeroreturn)
+DataStructure CalculateMeans(uint16_t dat[10][256*256], int NoPixels, int count, DataStructure iszeroreturn)
 {
-    for (int i=0; i<count; i++){
-        iszeroreturn.naming = i;
-        if (dat[i][iter]>0)
-        {
-            iszeroreturn.counter +=1;
-        }
-        if (iszeroreturn.counter == count){
-            for (int j=0; j<count; j++){
-                iszeroreturn.avg_width["glob_width" + to_string(j)] = iszeroreturn.avg_width["glob_width" + to_string(j)] + pow(iszeroreturn.avg["glob_mean"+to_string(j)] - dat[j][iter],2);
+    
+    for (int j=0; j<NoPixels; j++){
+        for (int i=0; i<count; i++){
+            iszeroreturn.naming = i;
+            if (dat[i][j]>0)
+            {
+                iszeroreturn.counter +=1;
+            }
+            if (iszeroreturn.counter == count){
+                for (int k=0; k<count; k++){
+                iszeroreturn.avg["glob_mean"+to_string(k)] += dat[k][j];
+                }
             }
         }
+        if (iszeroreturn.counter == count){
+            iszeroreturn.counter = 0;
+            iszeroreturn.naming = 0;
+            iszeroreturn.IsTrue = true;
+        }
+        else if (iszeroreturn.counter != count){
+            iszeroreturn.counter = 0;
+            iszeroreturn.naming = 0;
+            iszeroreturn.IsTrue = false;
+        }
+        if (iszeroreturn.IsTrue == true){
+            iszeroreturn.NoHits++;
+        }
     }
-    if (iszeroreturn.counter == count){
-        iszeroreturn.counter = 0;
-        iszeroreturn.naming = 0;
-        iszeroreturn.IsTrue = true;
+    for (int i=0; i<count; i++){
+        iszeroreturn.avg["glob_mean" + to_string(i)] /=iszeroreturn.NoHits;
     }
-    else if (iszeroreturn.counter != count){
-        iszeroreturn.counter = 0;
-        iszeroreturn.naming = 0;
-        iszeroreturn.IsTrue = false;
+        return iszeroreturn;
+}
+
+
+DataStructure CalculateWidths(uint16_t dat[10][256*256], int NoPixels, int count, DataStructure iszeroreturn){
+    for (int j=0; j<NoPixels; j++){
+        for (int i=0; i<count; i++){
+            iszeroreturn.naming = i;
+            if (dat[i][j]>0)
+            {
+                iszeroreturn.counter +=1;
+            }
+            if (iszeroreturn.counter == count){
+                for (int k=0; k<count; k++){
+                    iszeroreturn.avg_width["glob_width" + to_string(k)] = iszeroreturn.avg_width["glob_width" + to_string(k)] + pow(iszeroreturn.avg["glob_mean"+to_string(k)] - dat[k][j],2);
+                }
+            }
+        }
+        if (iszeroreturn.counter == count){
+            iszeroreturn.counter = 0;
+            iszeroreturn.naming = 0;
+            iszeroreturn.IsTrue = true;
+        }
+        else if (iszeroreturn.counter != count){
+            iszeroreturn.counter = 0;
+            iszeroreturn.naming = 0;
+            iszeroreturn.IsTrue = false;
+        }
+    }
+    for (int i=0; i<count; i++){
+        iszeroreturn.avg_width["glob_width"+to_string(i)] = sqrt(iszeroreturn.avg_width["glob_width"+to_string(i)] / (iszeroreturn.NoHits-1));
     }
     return iszeroreturn;
 }
@@ -242,101 +284,87 @@ float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, in
 int main(int argc, char* argv[])
 {
   // === Input ===
-  if (argc<4) {
-    cout << "[dim_equalisation] FAILED: Input was incorrect" << endl;
-    cout << "[dim_equalisation] Usage: ./dim_equalisation prefix Trim1 trim2 ... " << endl;
-    cout << "\n\n";
-    return 0;
-  }
-  string prefix = argv[1];
+    if (argc<4) {
+        cout << "[dim_equalisation] FAILED: Input was incorrect" << endl;
+        cout << "[dim_equalisation] Usage: ./dim_equalisation prefix Trim1 trim2 ... " << endl;
+        cout << "\n\n";
+        return 0;
+    }
+    string prefix = argv[1];
     
-    // === initializing vector to track trim levels === //
+    // === Initializing vector to track trim levels === //
     vector<string> trimvec(10);
     for (int i=2; i<argc; i++){
         trimvec[i-2] = argv[i];
     }
+    
+    // === Translate from hexadecimal to decimal
     unordered_map<string,float> inputlevels;
     inputlevels = TrimValues(trimvec, inputlevels, argc-2);
     
     int dacRange = 25; // Tuneable parameter
     
-    uint16_t matrixarray[10][256*256];
     // === load means ===
+    uint16_t matrixarray[10][256*256];
     for (int i=0; i<argc-2; i++)
     {
         load_mean(prefix+"_Trim"+argv[i+2]+"_Noise_Mean.csv", matrixarray[i]);
     }
     
-//    === Hard coding the 0 trim for target ===
-    load_mean(prefix+"_Trim0_Noise_Mean.csv", matrixarray[2]);
+    //  === Hard coding the 0 trim for target ===
+    load_mean(prefix+"_Trim0_Noise_Mean.csv", matrixarray[argc-2]);
     
+    //  === Calculate pixels that are lost since they do not respond (mean_trimi==0)
     int mask_pixels_init = 0;
     mask_pixels_init = NoOfMaskedPixels(matrixarray, argc-2);
     cout << "  Number of masked pixels initially: " << mask_pixels_init << endl;
 
+    
     // === Calculate Target ===
     cout << "  [dim_equalisation] Equalising" << endl;
-    
-    unordered_map<string, float> means;
     // === calculate averages
-    int nohits = 0;
-    RetType iszeroreturn;
-    for (int j=0; j<256*256; j++){
-        iszeroreturn = IsZero(matrixarray, j, argc-2, iszeroreturn);
-        if (iszeroreturn.IsTrue){
-            means = iszeroreturn.avg;
-            nohits++;
-        }
-    }
+    unordered_map<string, float> means;
+    DataStructure iszeroreturn;
+    iszeroreturn = CalculateMeans(matrixarray, 256*256, argc-2, iszeroreturn);
+    means = iszeroreturn.avg;
 
-    
-    for (int i =0; i<argc-2;i++)
-    {
-        means["glob_mean" + to_string(i)] /= nohits;
-        iszeroreturn.avg["glob_mean" + to_string(i)] /=nohits;
-    }
-
+    // === hardcoding mean of 0 trim ===
     for (int i =0; i<256*256; i++){
         means["glob_mean2"]+=matrixarray[2][i];
     }
-    means["glob_mean2"]/=nohits;
+    means["glob_mean2"]/=iszeroreturn.NoHits;
     
     
-    
-//    === dynamic target ====
-//    int target=0;
-//    for (int i=0; i<argc-2; i++){
-//        target += means["glob_mean" + to_string(i)];
-//    }
-//    target /= (argc-2);
-//    cout << argv[3] << endl;
+//    ======================= Target  =============================
     
     
-////    === hard coded target ===
+    //    === dynamic target ====
+    //    int target=0;
+    //    for (int i=0; i<argc-2; i++){
+    //        target += means["glob_mean" + to_string(i)];
+    //    }
+    //    target /= (argc-2);
+    //    cout << argv[3] << endl;
+    
+    
+    //    === hard coded target ===
     int target = 0;
     target = (means["glob_mean2"] + means["glob_mean"+to_string(1)])/2;
     
+//    ====================================================
     
 
-    if (nohits==0) {
+    if (iszeroreturn.NoHits==0) {
         cout << "[dim_equalisation] FAILED: Threshold scan has empty output file" << endl;
         return 0;
     }
 
-  
+    // === calculate widths of distributions ===
     unordered_map<string, float> widths;
-    for (int j=0; j<256*256; ++j) {
-        iszeroreturn = IsZeroWidth(matrixarray, j, argc-2, iszeroreturn);
-        if (iszeroreturn.IsTrue) {
-            widths = iszeroreturn.avg_width;
-        }
-      }
-    for (int i=0; i <argc-2; i++){
-        iszeroreturn.avg_width["glob_width"+to_string(i)] = sqrt(iszeroreturn.avg_width["glob_width"+to_string(i)] / (nohits-1));
-    }
+    iszeroreturn = CalculateWidths(matrixarray, 256*256, argc-2, iszeroreturn);
     widths = iszeroreturn.avg_width;
-
-
+    
+    
     // === Calculate optimal trim ===
     string name_mask = prefix + "_Matrix_Mask.csv";
     FILE *file_mask = fopen(name_mask.c_str(), "w");
@@ -366,7 +394,8 @@ int main(int argc, char* argv[])
         trim = round((target - matrixarray[0][i])/trim_scale);
         predict[i] = matrixarray[0][i] + round(trim*trim_scale);
         diff = fabs(predict[i] - target);
-        
+
+
         // === determine which pixels to mask
         masking = MaskingIsZero(matrixarray, i, trim, diff, dacRange, masking);
         mask = masking.mask;
@@ -374,6 +403,7 @@ int main(int argc, char* argv[])
         
         if (masking.NotMasked){
             achieved_mean+=predict[i];
+
         }
         // Save results
         if (i%256==255) {
