@@ -89,7 +89,7 @@ struct DataStructure{
     unordered_map<string, float> avg;
     unordered_map<string, float> avg_width;
 };
-struct MaskingType{
+struct MaskingStructure{
     int mask=0;
     int masked=0;
     bool NotMasked=false;
@@ -114,7 +114,7 @@ int NoOfMaskedPixels(uint16_t dat[10][256*256], int count){
     return pixels;
 }
 
-MaskingType MaskingIsZero(uint16_t dat[10][256*256], int iter, int trim, int diff, int dac, MaskingType ret){
+MaskingStructure CalculateMasking(uint16_t dat[10][256*256], int iter, int trim, int diff, int dac, MaskingStructure ret){
     ret.mask = 0;
     ret.NotMasked=false;
     if (dat[0][iter]==0 || dat[1][iter]==0 || diff>dac || trim>15 || trim<0){
@@ -137,34 +137,6 @@ MaskingType MaskingIsZero(uint16_t dat[10][256*256], int iter, int trim, int dif
     }
     return ret;
 }
-
-DataStructure IsZero(uint16_t dat[10][256*256], int iter, int count, DataStructure iszeroreturn)
-{
-    for (int i=0; i<count; i++){
-        iszeroreturn.naming = i;
-        if (dat[i][iter]>0)
-        {
-            iszeroreturn.counter +=1;
-        }
-        if (iszeroreturn.counter == count){
-            for (int j=0; j<count; j++){
-            iszeroreturn.avg["glob_mean"+to_string(j)] += dat[j][iter];
-            }
-        }
-    }
-    if (iszeroreturn.counter == count){
-        iszeroreturn.counter = 0;
-        iszeroreturn.naming = 0;
-        iszeroreturn.IsTrue = true;
-    }
-    else if (iszeroreturn.counter != count){
-        iszeroreturn.counter = 0;
-        iszeroreturn.naming = 0;
-        iszeroreturn.IsTrue = false;
-    }
-    return iszeroreturn;
-}
-    
 
 DataStructure CalculateMeans(uint16_t dat[10][256*256], int NoPixels, int count, DataStructure iszeroreturn)
 {
@@ -201,7 +173,6 @@ DataStructure CalculateMeans(uint16_t dat[10][256*256], int NoPixels, int count,
     }
         return iszeroreturn;
 }
-
 
 DataStructure CalculateWidths(uint16_t dat[10][256*256], int NoPixels, int count, DataStructure iszeroreturn){
     for (int j=0; j<NoPixels; j++){
@@ -384,7 +355,7 @@ int main(int argc, char* argv[])
     long nmasked = 0;
     int achieved_mean = 0;
     float achieved_width = 0;
-    MaskingType masking;
+    MaskingStructure masking;
 
 
     
@@ -397,7 +368,7 @@ int main(int argc, char* argv[])
 
 
         // === determine which pixels to mask
-        masking = MaskingIsZero(matrixarray, i, trim, diff, dacRange, masking);
+        masking = CalculateMasking(matrixarray, i, trim, diff, dacRange, masking);
         mask = masking.mask;
         nmasked = masking.masked;
         
