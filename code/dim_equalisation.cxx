@@ -138,71 +138,70 @@ MaskingStructure CalculateMasking(uint16_t dat[10][256*256], int iter, int trim,
     return ret;
 }
 
-DataStructure CalculateMeans(uint16_t dat[10][256*256], int NoPixels, int count, DataStructure iszeroreturn)
-{
+DataStructure CalculateMeans(uint16_t dat[10][256*256], int NoPixels, int count, DataStructure Results){
     
     for (int j=0; j<NoPixels; j++){
         for (int i=0; i<count; i++){
-            iszeroreturn.naming = i;
+            Results.naming = i;
             if (dat[i][j]>0)
             {
-                iszeroreturn.counter +=1;
+                Results.counter +=1;
             }
-            if (iszeroreturn.counter == count){
+            if (Results.counter == count){
                 for (int k=0; k<count; k++){
-                iszeroreturn.avg["glob_mean"+to_string(k)] += dat[k][j];
+                Results.avg["glob_mean"+to_string(k)] += dat[k][j];
                 }
             }
         }
-        if (iszeroreturn.counter == count){
-            iszeroreturn.counter = 0;
-            iszeroreturn.naming = 0;
-            iszeroreturn.IsTrue = true;
+        if (Results.counter == count){
+            Results.counter = 0;
+            Results.naming = 0;
+            Results.IsTrue = true;
         }
-        else if (iszeroreturn.counter != count){
-            iszeroreturn.counter = 0;
-            iszeroreturn.naming = 0;
-            iszeroreturn.IsTrue = false;
+        else if (Results.counter != count){
+            Results.counter = 0;
+            Results.naming = 0;
+            Results.IsTrue = false;
         }
-        if (iszeroreturn.IsTrue == true){
-            iszeroreturn.NoHits++;
+        if (Results.IsTrue == true){
+            Results.NoHits++;
         }
     }
     for (int i=0; i<count; i++){
-        iszeroreturn.avg["glob_mean" + to_string(i)] /=iszeroreturn.NoHits;
+        Results.avg["glob_mean" + to_string(i)] /=Results.NoHits;
     }
-        return iszeroreturn;
+        return Results;
 }
 
-DataStructure CalculateWidths(uint16_t dat[10][256*256], int NoPixels, int count, DataStructure iszeroreturn){
+DataStructure CalculateWidths(uint16_t dat[10][256*256], int NoPixels, int count, DataStructure Results){
     for (int j=0; j<NoPixels; j++){
         for (int i=0; i<count; i++){
-            iszeroreturn.naming = i;
+            Results.naming = i;
             if (dat[i][j]>0)
             {
-                iszeroreturn.counter +=1;
+                Results.counter +=1;
             }
-            if (iszeroreturn.counter == count){
+            if (Results.counter == count){
                 for (int k=0; k<count; k++){
-                    iszeroreturn.avg_width["glob_width" + to_string(k)] = iszeroreturn.avg_width["glob_width" + to_string(k)] + pow(iszeroreturn.avg["glob_mean"+to_string(k)] - dat[k][j],2);
+                    Results.avg_width["glob_width" + to_string(k)] = Results.avg_width["glob_width" + to_string(k)] + pow(Results.avg["glob_mean"+to_string(k)] - dat[k][j],2);
                 }
             }
         }
-        if (iszeroreturn.counter == count){
-            iszeroreturn.counter = 0;
-            iszeroreturn.naming = 0;
-            iszeroreturn.IsTrue = true;
+        if (Results.counter == count){
+            Results.counter = 0;
+            Results.naming = 0;
+            Results.IsTrue = true;
         }
-        else if (iszeroreturn.counter != count){
-            iszeroreturn.counter = 0;
-            iszeroreturn.naming = 0;
-            iszeroreturn.IsTrue = false;
+        else if (Results.counter != count){
+            Results.counter = 0;
+            Results.naming = 0;
+            Results.IsTrue = false;
         }
     }
     for (int i=0; i<count; i++){
-        iszeroreturn.avg_width["glob_width"+to_string(i)] = sqrt(iszeroreturn.avg_width["glob_width"+to_string(i)] / (iszeroreturn.NoHits-1));
+        Results.avg_width["glob_width"+to_string(i)] = sqrt(Results.avg_width["glob_width"+to_string(i)] / (Results.NoHits-1));
     }
-    return iszeroreturn;
+    return Results;
 }
 
 unordered_map<string,float> TrimValues(vector<string> trimlevels, unordered_map<string,float> output, int count)
@@ -237,6 +236,40 @@ float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, in
     trimscale = fabs(trimscale)/ (fabs(levels[trimvec[0]]-levels[trimvec[1]])+1);
     return trimscale;
 }
+
+
+int CalcTrim(int target,uint16_t dat[10][256*256], int iter, float trimscale){
+    int trim = 0;
+    trim = round((target - dat[0][iter])/trimscale);
+    return trim;
+}
+
+
+int CalcPredict(uint16_t dat[10][256*256], int iter, int trim, float trimscale){
+    int predict=0;
+    predict = dat[0][iter] + round(trim*trimscale);
+    return predict;
+}
+
+int CalcDiff(int target, int predict){
+    int diff = 0;
+    diff = fabs(target-predict);
+    return diff;
+}
+
+int CalcAchievWidth(int predict[256*256], int NoPixels, float achieved_mean, int nmasked){
+    int achieved_width=0;
+    for (int i =0; i<NoPixels; i++){
+        if (predict[i]>0){
+            achieved_width += pow(predict[i]-achieved_mean,2);
+        }
+    }
+    achieved_width = sqrt(achieved_width/(NoPixels-nmasked-1));
+    return achieved_width;
+}
+
+
+
 
 //int CalculateTarget(unordered_map<string, int> means, vector<string> trimvec, unordered_map<string, float> levels){
 //    int target = 0;
@@ -293,17 +326,18 @@ int main(int argc, char* argv[])
     
     // === Calculate Target ===
     cout << "  [dim_equalisation] Equalising" << endl;
+    
     // === calculate averages
     unordered_map<string, float> means;
-    DataStructure iszeroreturn;
-    iszeroreturn = CalculateMeans(matrixarray, 256*256, argc-2, iszeroreturn);
-    means = iszeroreturn.avg;
+    DataStructure Results;
+    Results = CalculateMeans(matrixarray, 256*256, argc-2, Results);
+    means = Results.avg;
 
     // === hardcoding mean of 0 trim ===
     for (int i =0; i<256*256; i++){
         means["glob_mean2"]+=matrixarray[2][i];
     }
-    means["glob_mean2"]/=iszeroreturn.NoHits;
+    means["glob_mean2"]/=Results.NoHits;
     
     
 //    ======================= Target  =============================
@@ -325,15 +359,15 @@ int main(int argc, char* argv[])
 //    ====================================================
     
 
-    if (iszeroreturn.NoHits==0) {
+    if (Results.NoHits==0) {
         cout << "[dim_equalisation] FAILED: Threshold scan has empty output file" << endl;
         return 0;
     }
 
     // === calculate widths of distributions ===
     unordered_map<string, float> widths;
-    iszeroreturn = CalculateWidths(matrixarray, 256*256, argc-2, iszeroreturn);
-    widths = iszeroreturn.avg_width;
+    Results = CalculateWidths(matrixarray, 256*256, argc-2, Results);
+    widths = Results.avg_width;
     
     
     // === Calculate optimal trim ===
@@ -362,19 +396,16 @@ int main(int argc, char* argv[])
     for (int i=0; i<256*256; ++i) {
         mask = 0;
         trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2);
-        trim = round((target - matrixarray[0][i])/trim_scale);
-        predict[i] = matrixarray[0][i] + round(trim*trim_scale);
-        diff = fabs(predict[i] - target);
-
+        trim = CalcTrim(target, matrixarray, i, trim_scale);
+        predict[i] = CalcPredict(matrixarray, i, trim, trim_scale);
+        diff = CalcDiff(target, predict[i]);
 
         // === determine which pixels to mask
         masking = CalculateMasking(matrixarray, i, trim, diff, dacRange, masking);
         mask = masking.mask;
         nmasked = masking.masked;
-        
         if (masking.NotMasked){
             achieved_mean+=predict[i];
-
         }
         // Save results
         if (i%256==255) {
@@ -393,26 +424,25 @@ int main(int argc, char* argv[])
     fclose(file_trim);
     fclose(file_pred);
     
+    achieved_width = CalcAchievWidth(predict, 256*256, achieved_mean, nmasked);
+
     
-    for (int i=0; i<256*256; ++i) {
-        if (predict[i]>0) achieved_width += pow(predict[i] - achieved_mean, 2);
-    }
-    achieved_width = sqrt(achieved_width/(256*256-nmasked-1));
 
     for (int i=0; i<argc-2; i++ ){
         cout << "  Trim" + trimvec[i] << " distribution:   " << round(means["glob_mean" + to_string(i)]) << " +/- " << round(widths["glob_width"+to_string(i)]) << endl;
     }
     cout << "\n\n";
 
-    for (int i=0;i<argc-2;i++){
-        mean_widths += widths["glob_width"+to_string(i)]/(argc-2);
-    }
+    // === calculate mean of widths
+//    for (int i=0;i<argc-2;i++){
+//        mean_widths += widths["glob_width"+to_string(i)]/(argc-2);
+//    }
     
     char mean_w[24]; // dummy size, you should take care of the size!
     sprintf(mean_w, "%.2f", mean_widths);
     
     
-    cout << "  Mean of widths: " << mean_w << endl;
+//    cout << "  Mean of widths: " << mean_w << endl;
     cout << "  Equalisation Target: " << target << endl;
     char buffer[25];
     sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
@@ -429,8 +459,6 @@ int main(int argc, char* argv[])
     else if (i%256==255) fprintf(file_tp, "0\n");
     else fprintf(file_tp, "0,");
   }
-  //for (int i=0; i<255; ++i) fprintf(file_tp, "1,");
-  //fprintf(file_tp, "1\n");
   fclose(file_tp);
   
   return 0;
