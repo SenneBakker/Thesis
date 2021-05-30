@@ -257,11 +257,11 @@ int CalcDiff(int target, int predict){
     return diff;
 }
 
-int CalcAchievWidth(int predict[256*256], int NoPixels, float achieved_mean, int nmasked){
-    int achieved_width=0;
+float CalcAchievWidth(int predict[256*256], int NoPixels, float achieved_mean, int nmasked){
+    float achieved_width=0;
     for (int i =0; i<NoPixels; i++){
         if (predict[i]>0){
-            achieved_width += pow(predict[i]-achieved_mean,2);
+            achieved_width += pow(predict[i]-achieved_mean, 2);
         }
     }
     achieved_width = sqrt(achieved_width/(NoPixels-nmasked-1));
@@ -423,15 +423,16 @@ int main(int argc, char* argv[])
     fclose(file_mask);
     fclose(file_trim);
     fclose(file_pred);
-    
     achieved_width = CalcAchievWidth(predict, 256*256, achieved_mean, nmasked);
-
+//    for (int i=0; i<256*256; ++i) {
+//      if (predict[i]>0) achieved_width += pow(predict[i] - achieved_mean, 2);
+//    }
+//    achieved_width = sqrt(achieved_width/(256*256-nmasked-1));
     
 
     for (int i=0; i<argc-2; i++ ){
         cout << "  Trim" + trimvec[i] << " distribution:   " << round(means["glob_mean" + to_string(i)]) << " +/- " << round(widths["glob_width"+to_string(i)]) << endl;
     }
-    cout << "\n\n";
 
     // === calculate mean of widths
 //    for (int i=0;i<argc-2;i++){
