@@ -228,13 +228,27 @@ unordered_map<string,float> TrimValues(vector<string> trimlevels, unordered_map<
     
 }
 
-float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, int iter, uint16_t dat[10][256*256], int count){
+float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, int iter, uint16_t dat[10][256*256], int count, int mode = 0){
     float trimscale=0;
-    for (int i=0; i<count; i++){
-        trimscale += pow(-1,i)*dat[i][iter];
+    if (mode==0){
+        for (int i=0; i<count; i++){
+            trimscale += pow(-1,i)*dat[i][iter];
+        }
+        trimscale = fabs(trimscale)/ (fabs(levels[trimvec[0]]-levels[trimvec[1]])+1);
+        return trimscale;
     }
-    trimscale = fabs(trimscale)/ (fabs(levels[trimvec[0]]-levels[trimvec[1]])+1);
-    return trimscale;
+    else if (mode==1){
+//        cout << "  [dim_equalisation.Scale2Trims]: Using polynomial for prediciton" << endl;
+        trimscale = 0.02758*pow(levels[trimvec[1]],3) - 0.6792*pow(levels[trimvec[1]],2) + 19.48*levels[trimvec[1]] + 1296 - (0.02758*pow(levels[trimvec[0]],3) - 0.6792*pow(levels[trimvec[0]],2) + 19.48*levels[trimvec[0]] + 1296);
+        trimscale = trimscale/(levels[trimvec[1]] - levels[trimvec[0]]+1);
+        return trimscale;
+    }
+    else {
+        cout << "Trimscale calculation failed" << endl;
+        trimscale = 0;
+        return trimscale;
+    }
+    
 }
 
 
@@ -382,6 +396,7 @@ int main(int argc, char* argv[])
     
     
     float trim_scale;
+    float trim_scale1 = 0.0;
     int trim;
     int mask;
     int predict[256*256];
@@ -397,7 +412,10 @@ int main(int argc, char* argv[])
 //  =================== Masking and prediction =========================
     for (int i=0; i<256*256; ++i) {
         mask = 0;
-        trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2);
+//      Last argument of Scale2Trims decides which method is used. (0 = mean of 0 and F, 1 = polynomial)
+        trim_scale1 = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2, 0);
+        trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2, 1);
+        cout << trim_scale - trim_scale1 << endl;
         trim = CalcTrim(target, matrixarray, i, trim_scale);
         predict[i] = CalcPredict(matrixarray, i, trim, trim_scale);
         diff = CalcDiff(target, predict[i]);
