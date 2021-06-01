@@ -394,7 +394,7 @@ int main(int argc, char* argv[])
     MaskingStructure masking;
 
 
-    
+//  =================== Masking and prediction =========================
     for (int i=0; i<256*256; ++i) {
         mask = 0;
         trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2);
@@ -402,7 +402,7 @@ int main(int argc, char* argv[])
         predict[i] = CalcPredict(matrixarray, i, trim, trim_scale);
         diff = CalcDiff(target, predict[i]);
 
-        // === determine which pixels to mask
+
         masking = CalculateMasking(matrixarray, i, trim, diff, dacRange, masking);
         mask = masking.mask;
         nmasked = masking.masked;
@@ -431,17 +431,11 @@ int main(int argc, char* argv[])
     for (int i=0; i<argc-2; i++ ){
         cout << "  Trim" + trimvec[i] << " distribution:   " << round(means["glob_mean" + to_string(i)]) << " +/- " << round(widths["glob_width"+to_string(i)]) << endl;
     }
-
-// === calculate mean of widths
-//    for (int i=0;i<argc-2;i++){
-//        mean_widths += widths["glob_width"+to_string(i)]/(argc-2);
-//    }
     
     char mean_w[24]; // dummy size, you should take care of the size!
     sprintf(mean_w, "%.2f", mean_widths);
     
-    
-//    cout << "  Mean of widths: " << mean_w << endl;
+//  ====================== Summary ============================
     cout << "  Equalisation Target: " << target << endl;
     cout << "  Difference hctarget and Target: " << fabs(hctarget-target) << endl;
     char buffer[25];
