@@ -271,12 +271,14 @@ float CalcAchievWidth(int predict[256*256], int NoPixels, float achieved_mean, i
 
 
 
-//int CalculateTarget(unordered_map<string, int> means, vector<string> trimvec, unordered_map<string, float> levels){
-//    int target = 0;
-//
-//
-//
-//}
+float CalculateTarget(unordered_map<string, float> means, vector<string> trimvec, unordered_map<string, float> levels){
+    float target = 0;
+    float mid = 7.5;
+    float w1 = (mid-levels[trimvec[0]])/16;
+    float w2 = (levels[trimvec[1]]-mid)/16;
+    target = round(((1/w1)*means["glob_mean"+to_string(0)] + (1/w2)*means["glob_mean"+to_string(1)])/((w1+w2)/(w1*w2)));
+    return target;
+}
 
 
 
@@ -305,6 +307,11 @@ int main(int argc, char* argv[])
     // === Translate from hexadecimal to decimal
     unordered_map<string,float> inputlevels;
     inputlevels = TrimValues(trimvec, inputlevels, argc-2);
+
+//    === Print key value pairs ===
+//    for (auto const &pair: inputlevels) {
+//        cout << "{" << pair.first << ": " << pair.second << "}\n";
+//    }
     
     int dacRange = 25; // Tuneable parameter
     
@@ -340,23 +347,18 @@ int main(int argc, char* argv[])
     means["glob_mean2"]/=Results.NoHits;
     
     
-//    ======================= Target  =============================
-    
-    
-    //    === dynamic target ====
-    //    int target=0;
-    //    for (int i=0; i<argc-2; i++){
-    //        target += means["glob_mean" + to_string(i)];
-    //    }
-    //    target /= (argc-2);
-    //    cout << argv[3] << endl;
-    
-    
-    //    === hard coded target ===
+//  ======================= Target  =============================
+//  =================== Target function =========================
+//    unordered_map<string, int> means, vector<string> trimvec, unordered_map<string, float> levels
     int target = 0;
-    target = (means["glob_mean2"] + means["glob_mean"+to_string(1)])/2;
+    target = CalculateTarget(means, trimvec, inputlevels);
     
-//    ====================================================
+    
+//  =================== Target function =========================
+    int hctarget = 0;
+    hctarget = (means["glob_mean2"] + means["glob_mean"+to_string(1)])/2;
+
+//  ============================================================
     
 
     if (Results.NoHits==0) {
@@ -424,17 +426,13 @@ int main(int argc, char* argv[])
     fclose(file_trim);
     fclose(file_pred);
     achieved_width = CalcAchievWidth(predict, 256*256, achieved_mean, nmasked);
-//    for (int i=0; i<256*256; ++i) {
-//      if (predict[i]>0) achieved_width += pow(predict[i] - achieved_mean, 2);
-//    }
-//    achieved_width = sqrt(achieved_width/(256*256-nmasked-1));
     
 
     for (int i=0; i<argc-2; i++ ){
         cout << "  Trim" + trimvec[i] << " distribution:   " << round(means["glob_mean" + to_string(i)]) << " +/- " << round(widths["glob_width"+to_string(i)]) << endl;
     }
 
-    // === calculate mean of widths
+// === calculate mean of widths
 //    for (int i=0;i<argc-2;i++){
 //        mean_widths += widths["glob_width"+to_string(i)]/(argc-2);
 //    }
@@ -445,6 +443,7 @@ int main(int argc, char* argv[])
     
 //    cout << "  Mean of widths: " << mean_w << endl;
     cout << "  Equalisation Target: " << target << endl;
+    cout << "  Difference hctarget and Target: " << fabs(hctarget-target) << endl;
     char buffer[25];
     sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
     cout << buffer << endl;
