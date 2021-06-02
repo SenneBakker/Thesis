@@ -90,10 +90,12 @@ struct DataStructure{
     unordered_map<string, float> avg_width;
 };
 struct MaskingStructure{
-    int mask=0;
-    int masked=0;
+    int mask;
+    int masked;
+    int NoArg;
     bool NotMasked=false;
-    
+    int trim;
+    int predict[256*256];
 };
 
 int NoOfMaskedPixels(uint16_t dat[10][256*256], int count){
@@ -106,7 +108,7 @@ int NoOfMaskedPixels(uint16_t dat[10][256*256], int count){
                 counter++;
             }
         }
-        if (counter==count && counter!=0){
+        if (counter!=0){
             pixels++;
         }
         counter=0;
@@ -116,24 +118,37 @@ int NoOfMaskedPixels(uint16_t dat[10][256*256], int count){
 
 MaskingStructure CalculateMasking(uint16_t dat[10][256*256], int iter, int trim, int diff, int dac, MaskingStructure ret){
     ret.mask = 0;
+    ret.NoArg = 0;
     ret.NotMasked=false;
     if (dat[0][iter]==0 || dat[1][iter]==0 || diff>dac || trim>15 || trim<0){
         ret.masked++;
     }
-    if (dat[0][iter]==0){
-        ret.mask = 1;
-    }
-    if (dat[1][iter]==0){
-        ret.mask = 2;
-    }
-    if (diff>dac){
-        ret.mask=3;
-    }
-    if (trim>15 || trim<0){
-        ret.mask = 4;
-    }
     else {
         ret.NotMasked = true;
+    }
+    if (dat[0][iter]==0 && dat[1][iter]==0){
+        ret.mask = 1;
+        ret.NoArg++;
+    }
+    else if (dat[0][iter]==0){
+        ret.mask = 2;
+        ret.NoArg++;
+    }
+    else if (dat[1][iter]==0){
+        ret.mask = 3;
+        ret.NoArg++;
+    }
+    else if (trim>15 || trim<0){
+        ret.mask = 4;
+        ret.NoArg++;
+    }
+    else if (diff>dac){
+        ret.mask=5;
+        ret.NoArg++;
+    }
+    if (!ret.NotMasked){
+        ret.trim = 0;
+        ret.predict[iter] = 0;
     }
     return ret;
 }
@@ -228,13 +243,11 @@ unordered_map<string,float> TrimValues(vector<string> trimlevels, unordered_map<
     
 }
 
-float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, int iter, uint16_t dat[10][256*256], int count, int mode = 0){
+float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, int iter, uint16_t dat[10][256*256], int mode = 0){
     float trimscale=0;
     if (mode==0){
-        for (int i=0; i<count; i++){
-            trimscale += pow(-1,i)*dat[i][iter];
-        }
-        trimscale = fabs(trimscale)/ (fabs(levels[trimvec[0]]-levels[trimvec[1]])+1);
+        trimscale = dat[1][iter]-dat[0][iter];
+        trimscale = trimscale/(levels[trimvec[1]]-levels[trimvec[0]]+1);
         return trimscale;
     }
     else if (mode==1){
@@ -334,6 +347,7 @@ int main(int argc, char* argv[])
     
     //  === Hard coding the 0 trim for target ===
     load_mean(prefix+"_Trim0_Noise_Mean.csv", matrixarray[argc-2]);
+    load_mean(prefix+"_TrimF_Noise_Mean.csv", matrixarray[argc-1]);
     
     //  === Calculate pixels that are lost since they do not respond (mean_trimi==0)
     int mask_pixels_init = 0;
@@ -350,11 +364,14 @@ int main(int argc, char* argv[])
     Results = CalculateMeans(matrixarray, 256*256, argc-2, Results);
     means = Results.avg;
 
-    // === hardcoding mean of 0 trim ===
+    // === hardcoding mean of 0 and f trim for hardcoded target ===
     for (int i =0; i<256*256; i++){
-        means["glob_mean2"]+=matrixarray[2][i];
+        means["glob_mean"+to_string(argc-2)]+=matrixarray[argc-2][i];
+        means["glob_mean"+to_string(argc-1)]+=matrixarray[argc-1][i];
     }
-    means["glob_mean2"]/=Results.NoHits;
+    means["glob_mean"+to_string(argc-2)]/=Results.NoHits;
+    means["glob_mean"+to_string(argc-1)]/=Results.NoHits;
+
     
     
 //  ======================= Target  =============================
@@ -363,10 +380,9 @@ int main(int argc, char* argv[])
     int target = 0;
     target = CalculateTarget(means, trimvec, inputlevels);
     
-    
-//  =================== Target function =========================
+//  =================== Hardcoded target =========================
     int hctarget = 0;
-    hctarget = (means["glob_mean2"] + means["glob_mean"+to_string(1)])/2;
+    hctarget = (means["glob_mean"+to_string(argc-2)] + means["glob_mean"+to_string(argc-1)])/2;
 
 //  ============================================================
     
@@ -383,19 +399,18 @@ int main(int argc, char* argv[])
     
     
     // === Calculate optimal trim ===
-    string name_mask = prefix + "_Matrix_Mask.csv";
+    string name_mask = prefix + "_Matrix_Mask"+argv[2]+argv[3]+".csv";
     FILE *file_mask = fopen(name_mask.c_str(), "w");
-    string name_trim = prefix + "_Matrix_Trim.csv";
+    string name_trim = prefix + "_Matrix_Trim"+argv[2]+argv[3]+".csv";
     FILE *file_trim = fopen(name_trim.c_str(), "w");
-    string name_pred = prefix + "_TrimBest_Noise_Predict.csv";
+    string name_pred = prefix + "_TrimBest"+argv[2]+argv[3]+"_Noise_Predict.csv";
     FILE *file_pred = fopen(name_pred.c_str(), "w");
     
     
     float trim_scale;
-    float trim_scale1 = 0.0;
-    int trim;
+    int trim=0.0;
     int mask;
-    int predict[256*256];
+//    int predict[256*256];
     vector<int> Trims;
     float mean_widths = 0;
     int diff;
@@ -409,29 +424,28 @@ int main(int argc, char* argv[])
     for (int i=0; i<256*256; ++i) {
         mask = 0;
 //      Last argument of Scale2Trims decides which method is used. (0 = mean of 0 and F, 1 = polynomial)
-//        trim_scale1 = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2, 0);
-        trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2, 1);
-//        cout << trim_scale - trim_scale1 << endl;
-        trim = CalcTrim(target, matrixarray, i, trim_scale);
-        predict[i] = CalcPredict(matrixarray, i, trim, trim_scale);
-        diff = CalcDiff(target, predict[i]);
+        trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray, 0);
+        masking.trim = CalcTrim(target, matrixarray, i, trim_scale);
+        masking.predict[i] = CalcPredict(matrixarray, i, masking.trim, trim_scale);
+        diff = CalcDiff(target, masking.predict[i]);
 
+        
 
-        masking = CalculateMasking(matrixarray, i, trim, diff, dacRange, masking);
+        masking = CalculateMasking(matrixarray, i, masking.trim, diff, dacRange, masking);
         mask = masking.mask;
         nmasked = masking.masked;
         if (masking.NotMasked){
-            achieved_mean+=predict[i];
+            achieved_mean+=masking.predict[i];
         }
         // Save results
         if (i%256==255) {
           fprintf(file_mask, "%d\n", mask);
-          fprintf(file_trim, "%d\n", trim);
-          fprintf(file_pred, "%04d\n", predict[i]);
+          fprintf(file_trim, "%d\n", masking.trim);
+          fprintf(file_pred, "%04d\n", masking.predict[i]);
         } else {
           fprintf(file_mask, "%d,", mask);
-          fprintf(file_trim, "%d,", trim);
-          fprintf(file_pred, "%04d, ", predict[i]);
+          fprintf(file_trim, "%d,", masking.trim);
+          fprintf(file_pred, "%04d, ", masking.predict[i]);
 
         }
     }
@@ -439,8 +453,9 @@ int main(int argc, char* argv[])
     fclose(file_mask);
     fclose(file_trim);
     fclose(file_pred);
-    achieved_width = CalcAchievWidth(predict, 256*256, achieved_mean, nmasked);
+    achieved_width = CalcAchievWidth(masking.predict, 256*256, achieved_mean, nmasked);
     
+    cout << "  [dim_equalisation] Summary" << endl;
 
     for (int i=0; i<argc-2; i++ ){
         cout << "  Trim" + trimvec[i] << " distribution:   " << round(means["glob_mean" + to_string(i)]) << " +/- " << round(widths["glob_width"+to_string(i)]) << endl;
@@ -451,7 +466,8 @@ int main(int argc, char* argv[])
     
 //  ====================== Summary ============================
     cout << "  Equalisation Target: " << target << endl;
-    cout << "  Difference hctarget and Target: " << fabs(hctarget-target) << endl;
+//    cout << "  Hardcoded target: " << hctarget << endl;
+//    cout << "  Difference hctarget and Target: " << fabs(hctarget-target) << endl;
     char buffer[25];
     sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
     cout << buffer << endl;
