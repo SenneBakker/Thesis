@@ -238,7 +238,6 @@ float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, in
         return trimscale;
     }
     else if (mode==1){
-//        cout << "  [dim_equalisation.Scale2Trims]: Using polynomial for prediciton" << endl;
         trimscale = 0.02758*pow(levels[trimvec[1]],3) - 0.6792*pow(levels[trimvec[1]],2) + 19.48*levels[trimvec[1]] + 1296 - (0.02758*pow(levels[trimvec[0]],3) - 0.6792*pow(levels[trimvec[0]],2) + 19.48*levels[trimvec[0]] + 1296);
         trimscale = trimscale/(levels[trimvec[1]] - levels[trimvec[0]]+1);
         return trimscale;
@@ -281,9 +280,6 @@ float CalcAchievWidth(int predict[256*256], int NoPixels, float achieved_mean, i
     achieved_width = sqrt(achieved_width/(NoPixels-nmasked-1));
     return achieved_width;
 }
-
-
-
 
 float CalculateTarget(unordered_map<string, float> means, vector<string> trimvec, unordered_map<string, float> levels){
     float target = 0;
@@ -362,8 +358,8 @@ int main(int argc, char* argv[])
     
     
 //  ======================= Target  =============================
+    
 //  =================== Target function =========================
-//    unordered_map<string, int> means, vector<string> trimvec, unordered_map<string, float> levels
     int target = 0;
     target = CalculateTarget(means, trimvec, inputlevels);
     
@@ -413,9 +409,9 @@ int main(int argc, char* argv[])
     for (int i=0; i<256*256; ++i) {
         mask = 0;
 //      Last argument of Scale2Trims decides which method is used. (0 = mean of 0 and F, 1 = polynomial)
-        trim_scale1 = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2, 0);
+//        trim_scale1 = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2, 0);
         trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray, argc-2, 1);
-        cout << trim_scale - trim_scale1 << endl;
+//        cout << trim_scale - trim_scale1 << endl;
         trim = CalcTrim(target, matrixarray, i, trim_scale);
         predict[i] = CalcPredict(matrixarray, i, trim, trim_scale);
         diff = CalcDiff(target, predict[i]);
