@@ -91,11 +91,15 @@ struct DataStructure{
 };
 struct MaskingStructure{
     int mask;
-    int masked;
+    long masked;
     int NoArg;
     bool NotMasked=false;
     int trim;
     int predict[256*256];
+};
+struct TrimPredictionStructure{
+    int down;
+    int trim;
 };
 
 int NoOfMaskedPixels(uint16_t dat[10][256*256], int count){
@@ -243,6 +247,12 @@ unordered_map<string,float> TrimValues(vector<string> trimlevels, unordered_map<
     
 }
 
+
+
+
+
+
+
 float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, int iter, uint16_t dat[10][256*256], int mode = 0){
     float trimscale=0;
     if (mode==0){
@@ -252,7 +262,14 @@ float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, in
     }
     else if (mode==1){
         trimscale = 0.02758*pow(levels[trimvec[1]],3) - 0.6792*pow(levels[trimvec[1]],2) + 19.48*levels[trimvec[1]] + 1296 - (0.02758*pow(levels[trimvec[0]],3) - 0.6792*pow(levels[trimvec[0]],2) + 19.48*levels[trimvec[0]] + 1296);
-        trimscale = trimscale/(levels[trimvec[1]] - levels[trimvec[0]]+1);
+        // not sure if this is correct
+        if (std::count(trimvec.begin(), trimvec.end(), "0")) {
+            trimscale = trimscale/(levels[trimvec[1]] - levels[trimvec[0]]+1);
+        }
+        else{
+            trimscale = trimscale/(levels[trimvec[1]] - levels[trimvec[0]]);
+
+        }
         return trimscale;
     }
     else {
@@ -263,17 +280,69 @@ float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, in
     
 }
 
-
-int CalcTrim(int target,uint16_t dat[10][256*256], int iter, float trimscale){
-    int trim = 0;
-    trim = round((target - dat[0][iter])/trimscale);
-    return trim;
+float TrimScaleStep(int start, int end){
+    float trimscale = 0;
+    trimscale = 0.02758*pow(end,3) - 0.6792*pow(end,2) + 19.48*end + 1296 - (0.02758*pow(start,3) - 0.6792*pow(start,2) + 19.48*start + 1296);
+    return trimscale;
 }
 
 
-int CalcPredict(uint16_t dat[10][256*256], int iter, int trim, float trimscale){
+TrimPredictionStructure CalcTrim(int target, uint16_t dat[10][256*256], int iter, float trimscale, vector<string> trimvec, unordered_map<string,float> inputlevels, TrimPredictionStructure trimpredict, int mode = 0){
+    trimpredict.trim = 0;
+    trimpredict.down = 0;
+    int diff1 = 0;
+    int diff2 = 0;
+    if (mode==0){
+        trimpredict.trim = round((target - dat[0][iter])/trimscale);
+    }
+    
+    else if (mode==1){
+        if ((target - dat[0][iter])>0){
+            trimpredict.trim = round((target - dat[0][iter])/trimscale);
+        }
+        else if (target - dat[0][iter]<0){
+            diff1 = fabs(target - dat[0][iter]);
+            diff2 = fabs(target - dat[1][iter]);
+            if (diff1<diff2){
+                int i=inputlevels[trimvec[0]];
+                while (diff1>round(TrimScaleStep(0, 1)/2)){
+                    if (diff1-TrimScaleStep(i-1, i)*1<round(TrimScaleStep(0, 1)/2)){
+                        break;
+                    }
+                    else if (diff1-TrimScaleStep(i-1, i)*1>round(TrimScaleStep(0, 1)/2) or diff1-TrimScaleStep(i-1, i)*1==round(TrimScaleStep(0, 1)/2)){
+                        diff1 = diff1-TrimScaleStep(i-1, i)*1;
+                        trimpredict.down++;
+                        i--;
+                    }
+                    if (i-1<0){
+                        trimpredict.down+=round(diff1/TrimScaleStep(0, 1));
+                        break;
+                    }
+                }
+                trimpredict.trim = inputlevels[trimvec[0]]-trimpredict.down;
+            }
+            else {
+                trimpredict.trim = inputlevels[trimvec[1]]-trimpredict.down;
+                trimpredict.down =-(diff2/trimscale);
+            }
+        }
+        else if ((target - dat[0][iter])==0){
+            trimpredict.trim=0;
+        }
+    }
+    return trimpredict;
+}
+
+
+int CalcPredict(uint16_t dat[10][256*256], int iter, TrimPredictionStructure trimpredict, float trimscale){
     int predict=0;
-    predict = dat[0][iter] + round(trim*trimscale);
+    if (trimpredict.down == 0){
+        predict = dat[0][iter] + round(trimpredict.trim*trimscale);
+
+    }
+    else if (trimpredict.down!=0){
+        predict = dat[0][iter] - round(trimpredict.down*trimscale);
+    }
     return predict;
 }
 
@@ -299,7 +368,7 @@ float CalculateTarget(unordered_map<string, float> means, vector<string> trimvec
     float mid = 7.5;
     float w1 = (mid-levels[trimvec[0]])/16;
     float w2 = (levels[trimvec[1]]-mid)/16;
-    target = round(((1/w1)*means["glob_mean"+to_string(0)] + (1/w2)*means["glob_mean"+to_string(1)])/((w1+w2)/(w1*w2)));
+    target = ((1/w1)*means["glob_mean"+to_string(0)] + (1/w2)*means["glob_mean"+to_string(1)])/((w1+w2)/(w1*w2));
     return target;
 }
 
@@ -331,10 +400,6 @@ int main(int argc, char* argv[])
     unordered_map<string,float> inputlevels;
     inputlevels = TrimValues(trimvec, inputlevels, argc-2);
 
-//    === Print key value pairs ===
-//    for (auto const &pair: inputlevels) {
-//        cout << "{" << pair.first << ": " << pair.second << "}\n";
-//    }
     
     int dacRange = 25; // Tuneable parameter
     
@@ -377,8 +442,8 @@ int main(int argc, char* argv[])
 //  ======================= Target  =============================
     
 //  =================== Target function =========================
-    int target = 0;
-    target = CalculateTarget(means, trimvec, inputlevels);
+    float target = 0;
+    target = round(CalculateTarget(means, trimvec, inputlevels));
     
 //  =================== Hardcoded target =========================
     int hctarget = 0;
@@ -408,9 +473,7 @@ int main(int argc, char* argv[])
     
     
     float trim_scale;
-    int trim=0.0;
     int mask;
-//    int predict[256*256];
     vector<int> Trims;
     float mean_widths = 0;
     int diff;
@@ -418,15 +481,16 @@ int main(int argc, char* argv[])
     int achieved_mean = 0;
     float achieved_width = 0;
     MaskingStructure masking;
+    TrimPredictionStructure trim_predict;
 
 
 //  =================== Masking and prediction =========================
     for (int i=0; i<256*256; ++i) {
         mask = 0;
-//      Last argument of Scale2Trims decides which method is used. (0 = mean of 0 and F, 1 = polynomial)
-        trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray, 0);
-        masking.trim = CalcTrim(target, matrixarray, i, trim_scale);
-        masking.predict[i] = CalcPredict(matrixarray, i, masking.trim, trim_scale);
+//  Last argument of Scale2Trims decides which method is used. (0 = mean of 0 and F, 1 = polynomial)
+        trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray,1);
+        trim_predict = CalcTrim(target, matrixarray, i, trim_scale, trimvec, inputlevels, trim_predict, 1);
+        masking.predict[i] = CalcPredict(matrixarray, i, trim_predict, trim_scale);
         diff = CalcDiff(target, masking.predict[i]);
 
         
@@ -440,11 +504,11 @@ int main(int argc, char* argv[])
         // Save results
         if (i%256==255) {
           fprintf(file_mask, "%d\n", mask);
-          fprintf(file_trim, "%d\n", masking.trim);
+          fprintf(file_trim, "%d\n", trim_predict.trim);
           fprintf(file_pred, "%04d\n", masking.predict[i]);
         } else {
           fprintf(file_mask, "%d,", mask);
-          fprintf(file_trim, "%d,", masking.trim);
+          fprintf(file_trim, "%d,", trim_predict.trim);
           fprintf(file_pred, "%04d, ", masking.predict[i]);
 
         }
@@ -458,16 +522,16 @@ int main(int argc, char* argv[])
     cout << "  [dim_equalisation] Summary" << endl;
 
     for (int i=0; i<argc-2; i++ ){
-        cout << "  Trim" + trimvec[i] << " distribution:   " << round(means["glob_mean" + to_string(i)]) << " +/- " << round(widths["glob_width"+to_string(i)]) << endl;
+        cout << "  Trim" + trimvec[i] << " distribution:  " << round(means["glob_mean" + to_string(i)]) << " +/- " << round(widths["glob_width"+to_string(i)]) << endl;
     }
     
     char mean_w[24]; // dummy size, you should take care of the size!
     sprintf(mean_w, "%.2f", mean_widths);
     
 //  ====================== Summary ============================
-    cout << "  Equalisation Target: " << target << endl;
-//    cout << "  Hardcoded target: " << hctarget << endl;
-//    cout << "  Difference hctarget and Target: " << fabs(hctarget-target) << endl;
+    cout << "  Equalisation Target:  " << target << endl;
+    cout << "  Hardcoded target:  " << hctarget << endl;
+    cout << "  Difference hctarget and Target:  " << fabs(hctarget-target) << endl;
     char buffer[25];
     sprintf(buffer, "  Achieved: %d +/- %.1f", achieved_mean, achieved_width);
     cout << buffer << endl;
