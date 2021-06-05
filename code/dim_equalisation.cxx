@@ -92,8 +92,9 @@ struct DataStructure{
 struct MaskingStructure{
     int mask;
     long masked;
+    // NoArg for checking if pixels are being masked for multiple reasons
     int NoArg;
-    bool NotMasked=false;
+    bool NotMasked;
     int trim;
     int predict[256*256];
 };
@@ -118,43 +119,6 @@ int NoOfMaskedPixels(uint16_t dat[10][256*256], int count){
         counter=0;
     }
     return pixels;
-}
-
-MaskingStructure CalculateMasking(uint16_t dat[10][256*256], int iter, int trim, int diff, int dac, MaskingStructure ret){
-    ret.mask = 0;
-    ret.NoArg = 0;
-    ret.NotMasked=false;
-    if (dat[0][iter]==0 || dat[1][iter]==0 || diff>dac || trim>15 || trim<0){
-        ret.masked++;
-    }
-    else {
-        ret.NotMasked = true;
-    }
-    if (dat[0][iter]==0 && dat[1][iter]==0){
-        ret.mask = 1;
-        ret.NoArg++;
-    }
-    else if (dat[0][iter]==0){
-        ret.mask = 2;
-        ret.NoArg++;
-    }
-    else if (dat[1][iter]==0){
-        ret.mask = 3;
-        ret.NoArg++;
-    }
-    else if (trim>15 || trim<0){
-        ret.mask = 4;
-        ret.NoArg++;
-    }
-    else if (diff>dac){
-        ret.mask=5;
-        ret.NoArg++;
-    }
-    if (!ret.NotMasked){
-        ret.trim = 0;
-        ret.predict[iter] = 0;
-    }
-    return ret;
 }
 
 DataStructure CalculateMeans(uint16_t dat[10][256*256], int NoPixels, int count, DataStructure Results){
@@ -248,10 +212,43 @@ unordered_map<string,float> TrimValues(vector<string> trimlevels, unordered_map<
 }
 
 
-
-
-
-
+MaskingStructure CalculateMasking(uint16_t dat[10][256*256], int iter, int trim, int diff, int dac, MaskingStructure ret){
+    ret.mask = 0;
+    ret.NoArg = 0;
+    ret.NotMasked=false;
+    if (dat[0][iter]==0 or dat[1][iter]==0 or diff>dac or trim>15 or trim<0){
+        ret.masked++;
+    }
+    else {
+        ret.NotMasked = true;
+    }
+    
+    if (dat[0][iter]==0 && dat[1][iter]==0){
+        ret.mask = 1;
+        ret.NoArg++;
+    }
+    else if (dat[0][iter]==0){
+        ret.mask = 2;
+        ret.NoArg++;
+    }
+    else if (dat[1][iter]==0){
+        ret.mask = 3;
+        ret.NoArg++;
+    }
+    else if (trim>15 || trim<0){
+        ret.mask = 4;
+        ret.NoArg++;
+    }
+    else if (diff>dac){
+        ret.mask=5;
+        ret.NoArg++;
+    }
+    if (!ret.NotMasked){
+        ret.trim = 0;
+        ret.predict[iter] = 0;
+    }
+    return ret;
+}
 
 float Scale2Trims(unordered_map<string,float> levels, vector<string> trimvec, int iter, uint16_t dat[10][256*256], int mode = 0){
     float trimscale=0;
@@ -295,7 +292,6 @@ TrimPredictionStructure CalcTrim(int target, uint16_t dat[10][256*256], int iter
     if (mode==0){
         trimpredict.trim = round((target - dat[0][iter])/trimscale);
     }
-    
     else if (mode==1){
         if ((target - dat[0][iter])>0){
             trimpredict.trim = round((target - dat[0][iter])/trimscale);
@@ -303,25 +299,39 @@ TrimPredictionStructure CalcTrim(int target, uint16_t dat[10][256*256], int iter
         else if (target - dat[0][iter]<0){
             diff1 = fabs(target - dat[0][iter]);
             diff2 = fabs(target - dat[1][iter]);
+//            cout << "diff1: " << diff1 << " diff2: " << diff2 << endl;
             if (diff1<diff2){
                 int i=inputlevels[trimvec[0]];
                 while (diff1>round(TrimScaleStep(0, 1)/2)){
-                    if (diff1-TrimScaleStep(i-1, i)*1<round(TrimScaleStep(0, 1)/2)){
+                    //  if first given trimlevel=0, it cannot be shifted en therefore the loop must end
+                    if (i-1<0){
                         break;
                     }
-                    else if (diff1-TrimScaleStep(i-1, i)*1>round(TrimScaleStep(0, 1)/2) or diff1-TrimScaleStep(i-1, i)*1==round(TrimScaleStep(0, 1)/2)){
+                    // last time/no residual
+                    if (diff1-TrimScaleStep(i-1, i)*1 <= round(TrimScaleStep(i-1, i)/2) and i-1>=0){
+                        diff1 = diff1-TrimScaleStep(i-1, i)*1;
+                        trimpredict.down++;
+                        i--;
+                        break;
+                    }
+                    // last time/with residual
+                    else if (diff1-TrimScaleStep(i-1, i)*1 > round(TrimScaleStep(0, 1)/2) and i-1==0){
+                        diff1 = diff1-TrimScaleStep(i-1, i)*1;
+                        trimpredict.down++;
+                        trimpredict.down+=round(diff1/TrimScaleStep(0, 1));
+                        break;
+                    }
+                    // keep going/levels remaining
+                    else if (diff1-TrimScaleStep(i-1, i)*1 > round(TrimScaleStep(i-1, i)/2)  and i-1>0){
                         diff1 = diff1-TrimScaleStep(i-1, i)*1;
                         trimpredict.down++;
                         i--;
                     }
-                    if (i-1<0){
-                        trimpredict.down+=round(diff1/TrimScaleStep(0, 1));
-                        break;
-                    }
                 }
-                trimpredict.trim = inputlevels[trimvec[0]]-trimpredict.down;
+                 trimpredict.trim = inputlevels[trimvec[0]]-trimpredict.down;
             }
             else {
+//                cout << "diff2<diff1" << endl;
                 trimpredict.trim = inputlevels[trimvec[1]]-trimpredict.down;
                 trimpredict.down =-(diff2/trimscale);
             }
@@ -334,14 +344,18 @@ TrimPredictionStructure CalcTrim(int target, uint16_t dat[10][256*256], int iter
 }
 
 
-int CalcPredict(uint16_t dat[10][256*256], int iter, TrimPredictionStructure trimpredict, float trimscale){
+int CalcPredict(uint16_t dat[10][256*256], int iter, TrimPredictionStructure trimpredict, float trimscale, int mode = 0){
     int predict=0;
-    if (trimpredict.down == 0){
+    if (mode==0){
         predict = dat[0][iter] + round(trimpredict.trim*trimscale);
-
     }
-    else if (trimpredict.down!=0){
-        predict = dat[0][iter] - round(trimpredict.down*trimscale);
+    else if (mode==1){
+        if (trimpredict.down == 0){
+            predict = dat[0][iter] + round(trimpredict.trim*trimscale);
+        }
+        else if (trimpredict.down!=0){
+            predict = dat[0][iter] - round(trimpredict.down*trimscale);
+        }
     }
     return predict;
 }
@@ -483,19 +497,20 @@ int main(int argc, char* argv[])
     MaskingStructure masking;
     TrimPredictionStructure trim_predict;
 
-
 //  =================== Masking and prediction =========================
+//    int i=0; i<256*256;
+//    int i=512; i<256*4;
     for (int i=0; i<256*256; ++i) {
         mask = 0;
 //  Last argument of Scale2Trims decides which method is used. (0 = mean of 0 and F, 1 = polynomial)
+//  Last argument of CalcTrim decides which method is used. (0 = only up and 1 = both up and down (if trim1!=0))
         trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray,1);
         trim_predict = CalcTrim(target, matrixarray, i, trim_scale, trimvec, inputlevels, trim_predict, 1);
-        masking.predict[i] = CalcPredict(matrixarray, i, trim_predict, trim_scale);
+        masking.predict[i] = CalcPredict(matrixarray, i, trim_predict, trim_scale,1);
         diff = CalcDiff(target, masking.predict[i]);
 
         
-
-        masking = CalculateMasking(matrixarray, i, masking.trim, diff, dacRange, masking);
+        masking = CalculateMasking(matrixarray, i, trim_predict.trim, diff, dacRange, masking);
         mask = masking.mask;
         nmasked = masking.masked;
         if (masking.NotMasked){
@@ -522,7 +537,7 @@ int main(int argc, char* argv[])
     cout << "  [dim_equalisation] Summary" << endl;
 
     for (int i=0; i<argc-2; i++ ){
-        cout << "  Trim" + trimvec[i] << " distribution:  " << round(means["glob_mean" + to_string(i)]) << " +/- " << round(widths["glob_width"+to_string(i)]) << endl;
+        cout << "  Trim " + trimvec[i] << " distribution:  " << round(means["glob_mean" + to_string(i)]) << " +/- " << round(widths["glob_width"+to_string(i)]) << endl;
     }
     
     char mean_w[24]; // dummy size, you should take care of the size!
