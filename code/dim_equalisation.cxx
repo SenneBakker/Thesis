@@ -1,4 +1,4 @@
-// ======================================
+4// ======================================
 //
 // Libraries
 //
@@ -289,22 +289,17 @@ float TrimScaleStep(int start, int end){
 
 TrimPredictionStructure GoUp(uint16_t dat[256*256], TrimPredictionStructure trimpredict, int target, int start, int stop, int iter){
     trimpredict.down = 0;
-    
-    // diff 2 is only needed when target is in between the two values
     int diff1 = fabs(target - dat[iter]);
     int i=start;
     while (diff1>round(TrimScaleStep(7, 8)/2)){
-//        cout << "i: " << i << endl << " diff: " << diff1 << endl;
         //  if first given trimlevel=0, it cannot be shifted en therefore the loop must end. However, a trim should be calculated
         if (i+1>stop){
             // should not happen since it would be stoped by last time/with residual (except when first trim equals 0)
-            // should include residual
             trimpredict.up+=round(diff1/TrimScaleStep(i-1, i));
             break;
         }
         // last time/no residual
         if (diff1-TrimScaleStep(i, i+1)*1 <= round(TrimScaleStep(i, i+1)/2) and i+1<=stop){
-//            cout << 1 << endl;
             diff1 = diff1-TrimScaleStep(i, i+1)*1;
             trimpredict.up++;
             i++ ;
@@ -317,7 +312,6 @@ TrimPredictionStructure GoUp(uint16_t dat[256*256], TrimPredictionStructure trim
         }
         // last time/with residual
         else if (diff1-TrimScaleStep(i, i+1)*1 > round(TrimScaleStep(0, 1)/2) and i+1==stop){
-//            cout << 2 << endl;
             diff1 = diff1-TrimScaleStep(i, i+1)*1;
             trimpredict.up++;
             trimpredict.up+=round(diff1/TrimScaleStep(14, 15));
@@ -326,13 +320,10 @@ TrimPredictionStructure GoUp(uint16_t dat[256*256], TrimPredictionStructure trim
         }
         // keep going/levels remaining
         else if (diff1-TrimScaleStep(i, i+1)*1 > round(TrimScaleStep(i, i+1)/2) and i+1<stop){
-//            cout << 3 << endl;
             diff1 = diff1-TrimScaleStep(i, i+1)*1;
             trimpredict.up++;
             i++;
         }
-//        cout << "next: " <<  diff1-TrimScaleStep(i, i+1)*1 << endl;
-//        cout << round(TrimScaleStep(i, i+1)/2) << endl;
     }
     trimpredict.trim = trimpredict.up;
     return trimpredict;
@@ -340,7 +331,6 @@ TrimPredictionStructure GoUp(uint16_t dat[256*256], TrimPredictionStructure trim
 
 TrimPredictionStructure GoDown(uint16_t dat[256*256], TrimPredictionStructure trimpredict, int target, int start, int iter){
     trimpredict.up = 0;
-    // diff 2 is only needed when target is in between the two values
     int diff1 = fabs(target - dat[iter]);
     int i=start;
     while (diff1>round(TrimScaleStep(0, 1)/2)){
@@ -380,7 +370,6 @@ TrimPredictionStructure GoDown(uint16_t dat[256*256], TrimPredictionStructure tr
 
 
 TrimPredictionStructure CalcTrim(int target, uint16_t dat[10][256*256], int iter, float trimscale, vector<string> trimvec, unordered_map<string,float> inputlevels, TrimPredictionStructure trimpredict, int mode = 0){
-    //  if trimvec[0]=0, the while loop does nothing and hence down=0. However, no trim is calculated
     trimpredict.trim = 0;
     trimpredict.up=0;
     trimpredict.down = 0;
