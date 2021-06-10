@@ -1,4 +1,4 @@
-4// ======================================
+// ======================================
 //
 // Libraries
 //
@@ -243,6 +243,11 @@ MaskingStructure CalculateMasking(uint16_t dat[10][256*256], int iter, int trim,
         ret.NoArg++;
     }
     else if (diff>dac){
+//        cout << "dat0: " << dat[0][iter] + 232 << endl;
+//        cout << "dat1: " << dat[1][iter] << endl;
+//        cout << trim << endl;
+//        cout << "predict: " << ret.predict[iter] << endl;
+//        cout << iter << endl;
         ret.mask=5;
         ret.NoArg++;
     }
@@ -426,6 +431,9 @@ int CalcDiff(int target, int predict){
 
 float CalcAchievWidth(int predict[256*256], int NoPixels, float achieved_mean, int nmasked){
     float achieved_width=0;
+    if (achieved_mean==0){
+        cout << "[dim_equalisation.CalcAchievWidth]: Failed. Achieved_mean=0" << endl;
+    }
     for (int i =0; i<NoPixels; i++){
         if (predict[i]>0){
             achieved_width += pow(predict[i]-achieved_mean, 2);
@@ -561,14 +569,13 @@ int main(int argc, char* argv[])
 //    int i=512; i<256*4;
     for (int i=0; i<256*256; ++i) {
         mask = 0;
-//  Last argument of Scale2Trims decides which method is used. (0 = mean of 0 and F, 1 = polynomial)
-//  Last argument of CalcTrim decides which method is used. (0 = only up and 1 = both up and down (if trim1!=0))
+        //  Last argument of Scale2Trims decides which method is used. (0 = mean of 0 and F, 1 = polynomial)
+        //  Last argument of CalcTrim decides which method is used. (0 = only up and 1 = both up and down (if trim1!=0))
         trim_scale = Scale2Trims(inputlevels, trimvec, i, matrixarray,1);
         trim_predict = CalcTrim(target, matrixarray, i, trim_scale, trimvec, inputlevels, trim_predict, 1);
         masking.predict[i] = CalcPredict(matrixarray, i, trim_predict, trim_scale, inputlevels, trimvec, 1);
-//        cout << masking.predict[i] << endl;
-        // ====== CHECK TRANSFORMING INTO ACTUAL TRIMLEVELS ==============
-        // transform trimlevels into actual trimlevels (i.e + its starting point) === Not sure if this is right ====
+
+        // transform trimlevels into actual trimlevels (i.e + its starting point)
         if (trim_predict.pos=="below"){
             trim_predict.trim+=inputlevels[trimvec[0]];
         }
