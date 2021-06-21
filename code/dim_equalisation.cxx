@@ -407,12 +407,10 @@ TrimPredictionStructure CalcTrim(int target, uint16_t dat[10][256*256], int iter
             trimpredict.trim=0;
             trimpredict.trim=inputlevels[trimvec[0]];
             trimpredict.pos = "equal1";
-//            cout << "equal1" << endl;
         }
         else if ((target - dat[1][iter])==0){
             trimpredict.trim=inputlevels[trimvec[1]];
             trimpredict.pos = "equal2";
-//            cout << "equal2" << endl;
         }
     }
     return trimpredict;
